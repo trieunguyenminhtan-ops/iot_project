@@ -1,0 +1,19 @@
+# ===== Thông tin nhạy cảm - TUYỆT ĐỐI không đưa lên GitHub =====
+firmware/include/secrets.h
+
+# ===== PlatformIO & C++ Compiler =====
+.pio/
+.cache/
+.clangd
+compile_commands.json
+
+# ===== Editor =====
+.vscode/*
+!.vscode/extensions.json
+
+# ===== Node / hệ thống / log =====
+node_modules/
+.node-red/
+.DS_Store
+Thumbs.db
+*.log

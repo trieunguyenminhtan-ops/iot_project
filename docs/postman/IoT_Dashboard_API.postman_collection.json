@@ -1,0 +1,1245 @@
+{
+  "info": {
+    "_postman_id": "72471d5d-5071-4f38-b7ba-7022766cb875",
+    "name": "IoT Dashboard API (NodeMCU - MQTT - Node-RED - MySQL)",
+    "description": "API của hệ thống giám sát và điều khiển IoT. Node-RED nhận dữ liệu từ NodeMCU qua MQTT, lưu vào MySQL và mở các API này cho giao diện web.\n\n**Cách dùng:** import collection + environment **IoT - Localhost**, chọn environment đó (góc trên bên phải), bảo đảm Node-RED đang chạy rồi bấm *Send*. Đổi `base_url` nếu Node-RED chạy ở máy/cổng khác.\n\n**Kiến trúc:** NodeMCU → MQTT (`data/sensor`, `device/control/*`, `device/response`) → Node-RED → MySQL → các API bên dưới → `dashboard.html`.\n\nMỗi request có sẵn test tự động và ví dụ response lấy từ hệ thống chạy thật.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Dashboard",
+      "description": "Số liệu thời gian thực.",
+      "item": [
+        {
+          "name": "Số liệu mới nhất + trạng thái đèn + dữ liệu biểu đồ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có temp, hum, light, led1, led2, chart\", function () { pm.expect(j).to.include.keys(\"temp\", \"hum\", \"light\", \"led1\", \"led2\", \"chart\"); });",
+                  "pm.test(\"led1/led2 là ON hoặc OFF\", function () { pm.expect([\"ON\",\"OFF\"]).to.include(j.led1); pm.expect([\"ON\",\"OFF\"]).to.include(j.led2); });",
+                  "pm.test(\"chart có 3 cảm biến\", function () { pm.expect(j.chart).to.include.keys(\"1\", \"2\", \"3\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Trả về giá trị mới nhất của nhiệt độ / độ ẩm / ánh sáng, trạng thái hiện tại của Đèn 1 và Đèn 2 (lệnh **thành công** gần nhất) và 10 điểm gần nhất của mỗi cảm biến để vẽ biểu đồ.\n\n`chart` có khóa là `sensor_id`: `1` = nhiệt độ, `2` = độ ẩm, `3` = ánh sáng.",
+            "url": {
+              "raw": "{{base_url}}/api/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "dashboard"
+              ],
+              "query": []
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Thành công",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"temp\": 29.4,\n  \"hum\": 68,\n  \"light\": 455,\n  \"led1\": \"ON\",\n  \"led2\": \"ON\",\n  \"chart\": {\n    \"1\": [\n      {\n        \"t\": \"2026-10-14T08:21:00.000Z\",\n        \"v\": 26.5\n      },\n      {\n        \"t\": \"2026-10-14T08:28:00.000Z\",\n        \"v\": 27\n      },\n      {\n        \"t\": \"2026-10-14T08:35:00.000Z\",\n        \"v\": 27.5\n      },\n      {\n        \"t\": \"2026-10-14T08:42:00.000Z\",\n        \"v\": 28\n      },\n      {\n        \"t\": \"2026-10-14T08:49:00.000Z\",\n        \"v\": 28.5\n      },\n      {\n        \"t\": \"2026-10-14T08:56:00.000Z\",\n        \"v\": 29\n      },\n      {\n        \"t\": \"2026-10-14T09:03:00.000Z\",\n        \"v\": 29.5\n      },\n      {\n        \"t\": \"2026-10-14T09:10:00.000Z\",\n        \"v\": 30\n      },\n      {\n        \"t\": \"2026-10-14T09:17:00.000Z\",\n        \"v\": 30.5\n      },\n      {\n        \"t\": \"2026-10-25T15:45:03.000Z\",\n        \"v\": 29.4\n      }\n    ],\n    \"2\": [\n      {\n        \"t\": \"2026-10-14T08:21:00.000Z\",\n        \"v\": 63\n      },\n      {\n        \"t\": \"2026-10-14T08:28:00.000Z\",\n        \"v\": 64\n      },\n      {\n        \"t\": \"2026-10-14T08:35:00.000Z\",\n        \"v\": 65\n      },\n      {\n        \"t\": \"2026-10-14T08:42:00.000Z\",\n        \"v\": 66\n      },\n      {\n        \"t\": \"2026-10-14T08:49:00.000Z\",\n        \"v\": 67\n      },\n      {\n        \"t\": \"2026-10-14T08:56:00.000Z\",\n        \"v\": 68\n      },\n      {\n        \"t\": \"2026-10-14T09:03:00.000Z\",\n        \"v\": 69\n      },\n      {\n        \"t\": \"2026-10-14T09:10:00.000Z\",\n        \"v\": 70\n      },\n      {\n        \"t\": \"2026-10-14T09:17:00.000Z\",\n        \"v\": 71\n      },\n      {\n        \"t\": \"2026-10-25T15:45:03.000Z\",\n        \"v\": 68\n      }\n    ],\n    \"3\": [\n      {\n        \"t\": \"2026-10-14T08:21:00.000Z\",\n        \"v\": 330\n      },\n      {\n        \"t\": \"2026-10-14T08:28:00.000Z\",\n        \"v\": 340\n      },\n      {\n        \"t\": \"2026-10-14T08:35:00.000Z\",\n        \"v\": 350\n      },\n      {\n        \"t\": \"2026-10-14T08:42:00.000Z\",\n        \"v\": 360\n      },\n      {\n        \"t\": \"2026-10-14T08:49:00.000Z\",\n        \"v\": 370\n      },\n      {\n        \"t\": \"2026-10-14T08:56:00.000Z\",\n        \"v\": 380\n      },\n      {\n        \"t\": \"2026-10-14T09:03:00.000Z\",\n        \"v\": 390\n      },\n      {\n        \"t\": \"2026-10-14T09:10:00.000Z\",\n        \"v\": 400\n      },\n      {\n        \"t\": \"2026-10-14T09:17:00.000Z\",\n        \"v\": 410\n      },\n      {\n        \"t\": \"2026-10-25T15:45:03.000Z\",\n        \"v\": 455\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Data sensor",
+      "description": "Dữ liệu cảm biến lưu trong bảng `data_sensors`.",
+      "item": [
+        {
+          "name": "Danh sách data sensor (tìm kiếm, lọc, phân trang)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có total, page, pageSize, rows\", function () { pm.expect(j).to.include.keys(\"total\", \"page\", \"pageSize\", \"rows\"); });",
+                  "pm.test(\"rows là mảng, không vượt pageSize\", function () { pm.expect(j.rows).to.be.an(\"array\"); pm.expect(j.rows.length).to.be.at.most(j.pageSize); });",
+                  "pm.test(\"Mỗi dòng đủ trường\", function () { j.rows.forEach(function (r) { pm.expect(r).to.include.keys(\"data_id\", \"sensor_name\", \"sensor_type_label\", \"unit\", \"value\", \"recorded_at\"); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Danh sách bản ghi cảm biến (mới nhất trước), có tìm kiếm, lọc và phân trang.\n\n| Tham số | Ý nghĩa |\n|---|---|\n| `page` | Trang (mặc định 1) |\n| `pageSize` | Số dòng/trang (mặc định 10, tối đa 100) |\n| `search` | Từ khóa tìm kiếm |\n| `field` | Tìm trong cột nào: `all` (mặc định), `id`, `name`, `type`, `value`, `unit`, `time` |\n| `type` | Lọc theo loại cảm biến: `temperature`, `humidity`, `light` |\n\nTìm theo `time` khớp theo chuỗi `YYYY-MM-DD HH:MM:SS`, ví dụ `2026-10-14` hoặc `08:0`.",
+            "url": {
+              "raw": "{{base_url}}/api/sensors?page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Trang"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "Số dòng/trang (tối đa 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Từ khóa tìm kiếm",
+                  "disabled": true
+                },
+                {
+                  "key": "field",
+                  "value": "all",
+                  "description": "all | id | name | type | value | unit | time",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "temperature | humidity | light",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Danh sách mới nhất",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/sensors?page=1&pageSize=3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sensors"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"data_id\": 3,\n      \"sensor_name\": \"Quang trở LDR\",\n      \"sensor_type\": \"light\",\n      \"sensor_type_label\": \"Ánh sáng\",\n      \"unit\": \"lux\",\n      \"value\": 455,\n      \"recorded_at\": \"2026-10-25T15:45:03.000Z\"\n    },\n    {\n      \"data_id\": 2,\n      \"sensor_name\": \"Cảm biến Độ ẩm DHT11\",\n      \"sensor_type\": \"humidity\",\n      \"sensor_type_label\": \"Độ ẩm\",\n      \"unit\": \"%\",\n      \"value\": 68,\n      \"recorded_at\": \"2026-10-25T15:45:03.000Z\"\n    },\n    {\n      \"data_id\": 1,\n      \"sensor_name\": \"Cảm biến Nhiệt độ DHT11\",\n      \"sensor_type\": \"temperature\",\n      \"sensor_type_label\": \"Nhiệt độ\",\n      \"unit\": \"°C\",\n      \"value\": 29.4,\n      \"recorded_at\": \"2026-10-25T15:45:03.000Z\"\n    }\n  ],\n  \"total\": 39,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            },
+            {
+              "name": "200 - Lọc loại Độ ẩm",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/sensors?page=1&pageSize=3&type=humidity",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sensors"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    },
+                    {
+                      "key": "type",
+                      "value": "humidity"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"data_id\": 2,\n      \"sensor_name\": \"Cảm biến Độ ẩm DHT11\",\n      \"sensor_type\": \"humidity\",\n      \"sensor_type_label\": \"Độ ẩm\",\n      \"unit\": \"%\",\n      \"value\": 68,\n      \"recorded_at\": \"2026-10-25T15:45:03.000Z\"\n    },\n    {\n      \"data_id\": 39,\n      \"sensor_name\": \"Cảm biến Độ ẩm DHT11\",\n      \"sensor_type\": \"humidity\",\n      \"sensor_type_label\": \"Độ ẩm\",\n      \"unit\": \"%\",\n      \"value\": 71,\n      \"recorded_at\": \"2026-10-14T09:17:00.000Z\"\n    },\n    {\n      \"data_id\": 36,\n      \"sensor_name\": \"Cảm biến Độ ẩm DHT11\",\n      \"sensor_type\": \"humidity\",\n      \"sensor_type_label\": \"Độ ẩm\",\n      \"unit\": \"%\",\n      \"value\": 70,\n      \"recorded_at\": \"2026-10-14T09:10:00.000Z\"\n    }\n  ],\n  \"total\": 13,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            },
+            {
+              "name": "200 - Tìm theo thời gian",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/sensors?page=1&pageSize=3&search=2026-10-14 08:0&field=time",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sensors"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    },
+                    {
+                      "key": "search",
+                      "value": "2026-10-14 08:0"
+                    },
+                    {
+                      "key": "field",
+                      "value": "time"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"data_id\": 9,\n      \"sensor_name\": \"Cảm biến Độ ẩm DHT11\",\n      \"sensor_type\": \"humidity\",\n      \"sensor_type_label\": \"Độ ẩm\",\n      \"unit\": \"%\",\n      \"value\": 61,\n      \"recorded_at\": \"2026-10-14T08:07:00.000Z\"\n    },\n    {\n      \"data_id\": 8,\n      \"sensor_name\": \"Cảm biến Nhiệt độ DHT11\",\n      \"sensor_type\": \"temperature\",\n      \"sensor_type_label\": \"Nhiệt độ\",\n      \"unit\": \"°C\",\n      \"value\": 25.5,\n      \"recorded_at\": \"2026-10-14T08:07:00.000Z\"\n    },\n    {\n      \"data_id\": 7,\n      \"sensor_name\": \"Quang trở LDR\",\n      \"sensor_type\": \"light\",\n      \"sensor_type_label\": \"Ánh sáng\",\n      \"unit\": \"lux\",\n      \"value\": 310,\n      \"recorded_at\": \"2026-10-14T08:07:00.000Z\"\n    }\n  ],\n  \"total\": 6,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            },
+            {
+              "name": "200 - Không có kết quả",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/sensors?page=1&pageSize=3&search=khong-co-gi",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sensors"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    },
+                    {
+                      "key": "search",
+                      "value": "khong-co-gi"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [],\n  \"total\": 0,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "Data sensor - lọc theo loại Độ ẩm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có total, page, pageSize, rows\", function () { pm.expect(j).to.include.keys(\"total\", \"page\", \"pageSize\", \"rows\"); });",
+                  "pm.test(\"rows là mảng, không vượt pageSize\", function () { pm.expect(j.rows).to.be.an(\"array\"); pm.expect(j.rows.length).to.be.at.most(j.pageSize); });",
+                  "pm.test(\"Mỗi dòng đủ trường\", function () { j.rows.forEach(function (r) { pm.expect(r).to.include.keys(\"data_id\", \"sensor_name\", \"sensor_type_label\", \"unit\", \"value\", \"recorded_at\"); }); });",
+                  "pm.test(\"Tất cả dòng đều là Độ ẩm\", function () { j.rows.forEach(function (r) { pm.expect(r.sensor_type).to.eql(\"humidity\"); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Ví dụ lọc `type=humidity`.",
+            "url": {
+              "raw": "{{base_url}}/api/sensors?page=1&pageSize=10&type=humidity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Trang"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "Số dòng/trang"
+                },
+                {
+                  "key": "type",
+                  "value": "humidity",
+                  "description": "Loại cảm biến"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Data sensor - tìm không có kết quả",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có total, page, pageSize, rows\", function () { pm.expect(j).to.include.keys(\"total\", \"page\", \"pageSize\", \"rows\"); });",
+                  "pm.test(\"rows là mảng, không vượt pageSize\", function () { pm.expect(j.rows).to.be.an(\"array\"); pm.expect(j.rows.length).to.be.at.most(j.pageSize); });",
+                  "pm.test(\"Mỗi dòng đủ trường\", function () { j.rows.forEach(function (r) { pm.expect(r).to.include.keys(\"data_id\", \"sensor_name\", \"sensor_type_label\", \"unit\", \"value\", \"recorded_at\"); }); });",
+                  "pm.test(\"total = 0 và rows rỗng\", function () { pm.expect(j.total).to.eql(0); pm.expect(j.rows).to.have.lengthOf(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Từ khóa không có trong DB phải trả về `total = 0`, `rows = []` (không phải lỗi).",
+            "url": {
+              "raw": "{{base_url}}/api/sensors?search=khong-co-gi-xyz",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "khong-co-gi-xyz",
+                  "description": "Từ khóa không tồn tại"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Action history",
+      "description": "Lịch sử điều khiển lưu trong bảng `actions`.",
+      "item": [
+        {
+          "name": "Lịch sử điều khiển (lọc thiết bị / hành động / trạng thái / thời gian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có total, page, pageSize, rows\", function () { pm.expect(j).to.include.keys(\"total\", \"page\", \"pageSize\", \"rows\"); });",
+                  "pm.test(\"Mỗi dòng đủ trường\", function () { j.rows.forEach(function (r) { pm.expect(r).to.include.keys(\"action_id\", \"device_name\", \"action\", \"status\", \"time\", \"response_ms\", \"operator\"); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Lịch sử điều khiển thiết bị (mới nhất trước).\n\n| Tham số | Ý nghĩa |\n|---|---|\n| `page`, `pageSize` | Phân trang (pageSize mặc định 10, tối đa 100) |\n| `device` | `1` = Đèn 1, `2` = Đèn 2 |\n| `action` | `ON` hoặc `OFF` |\n| `status` | `success`, `failed`, `timeout`, `pending` |\n| `time` | Tìm theo thời gian gửi lệnh, vd `2026-10-14` hoặc `10:3` |\n\n`response_ms` = thời gian phản hồi (ms). Lệnh `timeout` luôn là 5000. `operator` = tên người dùng nếu bấm trên web, hoặc `MQTT` nếu gửi trực tiếp qua MQTT.",
+            "url": {
+              "raw": "{{base_url}}/api/actions?page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "actions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Trang"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "Số dòng/trang (tối đa 100)"
+                },
+                {
+                  "key": "device",
+                  "value": "",
+                  "description": "1 | 2",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "description": "ON | OFF",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "success | failed | timeout | pending",
+                  "disabled": true
+                },
+                {
+                  "key": "time",
+                  "value": "",
+                  "description": "Chuỗi thời gian cần tìm",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Danh sách mới nhất",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/actions?page=1&pageSize=3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "actions"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"action_id\": 9,\n      \"device_id\": 2,\n      \"device_name\": \"Đèn 2\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led2:OFF\",\n      \"status\": \"timeout\",\n      \"time\": \"2026-10-25T15:46:27.351Z\",\n      \"time_response\": null,\n      \"response_ms\": 5000,\n      \"operator\": \"Nguyễn Văn A\"\n    },\n    {\n      \"action_id\": 8,\n      \"device_id\": 1,\n      \"device_name\": \"Đèn 1\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led1:ON\",\n      \"status\": \"timeout\",\n      \"time\": \"2026-10-25T15:46:27.320Z\",\n      \"time_response\": null,\n      \"response_ms\": 5000,\n      \"operator\": \"Nguyễn Văn A\"\n    },\n    {\n      \"action_id\": 7,\n      \"device_id\": 2,\n      \"device_name\": \"Đèn 2\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led2:OFF\",\n      \"status\": \"timeout\",\n      \"time\": \"2026-10-25T15:46:23.071Z\",\n      \"time_response\": null,\n      \"response_ms\": 5000,\n      \"operator\": \"Nguyễn Văn A\"\n    }\n  ],\n  \"total\": 9,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            },
+            {
+              "name": "200 - Lọc Đèn 2 + Bật + Thành công",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/actions?device=2&action=ON&status=success&pageSize=3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "actions"
+                  ],
+                  "query": [
+                    {
+                      "key": "device",
+                      "value": "2"
+                    },
+                    {
+                      "key": "action",
+                      "value": "ON"
+                    },
+                    {
+                      "key": "status",
+                      "value": "success"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"action_id\": 5,\n      \"device_id\": 2,\n      \"device_name\": \"Đèn 2\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led2:ON\",\n      \"status\": \"success\",\n      \"time\": \"2026-10-25T15:45:30.542Z\",\n      \"time_response\": \"2026-10-25T15:45:31.056Z\",\n      \"response_ms\": 514,\n      \"operator\": \"Nguyễn Văn A\"\n    },\n    {\n      \"action_id\": 4,\n      \"device_id\": 2,\n      \"device_name\": \"Đèn 2\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led2:ON\",\n      \"status\": \"success\",\n      \"time\": \"2026-10-14T10:31:00.000Z\",\n      \"time_response\": \"2026-10-14T10:31:00.350Z\",\n      \"response_ms\": 350,\n      \"operator\": \"Nguyễn Văn A\"\n    }\n  ],\n  \"total\": 2,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            },
+            {
+              "name": "200 - Tìm theo thời gian",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/actions?time=2026-10-14 10:3&pageSize=3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "actions"
+                  ],
+                  "query": [
+                    {
+                      "key": "time",
+                      "value": "2026-10-14 10:3"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "3"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"rows\": [\n    {\n      \"action_id\": 4,\n      \"device_id\": 2,\n      \"device_name\": \"Đèn 2\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led2:ON\",\n      \"status\": \"success\",\n      \"time\": \"2026-10-14T10:31:00.000Z\",\n      \"time_response\": \"2026-10-14T10:31:00.350Z\",\n      \"response_ms\": 350,\n      \"operator\": \"Nguyễn Văn A\"\n    },\n    {\n      \"action_id\": 3,\n      \"device_id\": 1,\n      \"device_name\": \"Đèn 1\",\n      \"user_id\": 1,\n      \"user_full_name\": \"Nguyễn Văn A\",\n      \"user_username\": \"B00DCXX000\",\n      \"action\": \"led1:OFF\",\n      \"status\": \"timeout\",\n      \"time\": \"2026-10-14T10:30:00.000Z\",\n      \"time_response\": null,\n      \"response_ms\": 5000,\n      \"operator\": \"Nguyễn Văn A\"\n    }\n  ],\n  \"total\": 2,\n  \"page\": 1,\n  \"pageSize\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "Action history - lọc Đèn 2 + Bật + Thành công",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có total, page, pageSize, rows\", function () { pm.expect(j).to.include.keys(\"total\", \"page\", \"pageSize\", \"rows\"); });",
+                  "pm.test(\"Mỗi dòng đủ trường\", function () { j.rows.forEach(function (r) { pm.expect(r).to.include.keys(\"action_id\", \"device_name\", \"action\", \"status\", \"time\", \"response_ms\", \"operator\"); }); });",
+                  "pm.test(\"Mọi dòng thỏa bộ lọc\", function () { j.rows.forEach(function (r) { pm.expect(r.action).to.eql(\"led2:ON\"); pm.expect(r.status).to.eql(\"success\"); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Kết hợp nhiều bộ lọc.",
+            "url": {
+              "raw": "{{base_url}}/api/actions?device=2&action=ON&status=success",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "actions"
+              ],
+              "query": [
+                {
+                  "key": "device",
+                  "value": "2",
+                  "description": "Đèn 2"
+                },
+                {
+                  "key": "action",
+                  "value": "ON",
+                  "description": "Bật"
+                },
+                {
+                  "key": "status",
+                  "value": "success",
+                  "description": "Thành công"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Điều khiển thiết bị",
+      "description": "Bật/tắt đèn qua MQTT.",
+      "item": [
+        {
+          "name": "Bật Đèn 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"ok = true, đúng thiết bị và hành động\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.device).to.eql(\"led1\"); pm.expect(j.action).to.eql(\"ON\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Gửi lệnh bật/tắt đèn: Node-RED publish MQTT tới `device/control/<device>`, NodeMCU thực thi rồi phản hồi ở `device/response`. Lệnh được ghi vào bảng `actions` (trạng thái `pending` → `success`/`failed`/`timeout`).\n\n**Body (JSON):** `device` = `led1` hoặc `led2`; `action` = `ON` hoặc `OFF`.\n\nLỗi tham số trả HTTP **400** kèm `{\"ok\": false, \"error\": \"...\"}`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/control",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "control"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Gửi lệnh thành công",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/control",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "control"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"ok\": true,\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}"
+            },
+            {
+              "name": "400 - Thiết bị không hợp lệ",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/control",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "control"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device\": \"led9\",\n  \"action\": \"ON\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"ok\": false,\n  \"error\": \"device phai la led1/led2, action phai la ON/OFF\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Tắt Đèn 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"ok = true\", function () { pm.expect(j.ok).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Tắt Đèn 2.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/control",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "control"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Gửi lệnh thành công",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/control",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "control"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"ok\": true,\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Lỗi - thiết bị không hợp lệ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"ok = false và có thông báo lỗi\", function () { pm.expect(j.ok).to.eql(false); pm.expect(j.error).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Thiết bị ngoài `led1`/`led2` bị từ chối với HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device\": \"led9\",\n  \"action\": \"ON\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/control",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "control"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "400 - Thiết bị không hợp lệ",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/control",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "control"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device\": \"led9\",\n  \"action\": \"ON\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"ok\": false,\n  \"error\": \"device phai la led1/led2, action phai la ON/OFF\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Profile",
+      "description": "Thông tin sinh viên.",
+      "item": [
+        {
+          "name": "Thông tin sinh viên (từ bảng users)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Trả về JSON hợp lệ\", function () { pm.response.json(); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Có username, full_name, email\", function () { pm.expect(j).to.include.keys(\"username\", \"full_name\", \"email\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Họ tên, MSSV (`username`) và email lấy từ bảng `users` (không liên quan đăng nhập). Các mục khác (lớp, SĐT, link...) cấu hình trong `dashboard.html`.",
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ],
+              "query": []
+            }
+          },
+          "response": [
+            {
+              "name": "200 - Thành công",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/profile",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "profile"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"username\": \"B00DCXX000\",\n  \"full_name\": \"Nguyễn Văn A\",\n  \"email\": \"email@example.com\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Xác thực & Phân quyền",
+      "description": "API đăng nhập, lấy thông tin cá nhân và đăng xuất.",
+      "item": [
+        {
+          "name": "POST /api/login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập tài khoản Admin để nhận Bearer token có quyền điều khiển thiết bị và cấu hình ngưỡng."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/login (Viewer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"viewer\",\n  \"password\": \"viewer123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập tài khoản Viewer (chỉ xem, không có quyền điều khiển thiết bị)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "me"
+              ]
+            },
+            "description": "Lấy thông tin người dùng hiện tại từ session token."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ]
+            },
+            "description": "Hủy phiên đăng nhập hiện tại."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Cảnh báo & Ngưỡng ánh sáng",
+      "description": "API theo dõi lịch sử cảnh báo vượt ngưỡng và cấu hình ngưỡng ánh sáng.",
+      "item": [
+        {
+          "name": "GET /api/alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/alerts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "alerts"
+              ]
+            },
+            "description": "Lấy danh sách 50 sự kiện cảnh báo cảm biến gần nhất từ bảng alerts."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/threshold",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/threshold",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "threshold"
+              ]
+            },
+            "description": "Lấy giá trị ngưỡng cảnh báo ánh sáng hiện tại (lux)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/threshold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threshold\": 850\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/threshold",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "threshold"
+              ]
+            },
+            "description": "Cập nhật giá trị ngưỡng cảnh báo ánh sáng mới (Yêu cầu quyền Admin)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8800",
+      "type": "string"
+    }
+  ]
+}

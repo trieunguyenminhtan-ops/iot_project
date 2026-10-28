@@ -1,0 +1,961 @@
+[
+    {
+        "id": "1327d70a3264ae9c",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "flow_iot_db",
+        "type": "tab",
+        "label": "1. Ghi du lieu: MQTT -> Database",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "flow_dashboard_api",
+        "type": "tab",
+        "label": "2. API cho Dashboard",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "mqtt_broker_cfg",
+        "type": "mqtt-broker",
+        "name": "Mosquitto broker (cung may)",
+        "broker": "127.0.0.1",
+        "port": "8000",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "mysql_db_cfg",
+        "type": "MySQLdatabase",
+        "name": "iot_project DB",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "iot_project",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "mqtt_in_sensor",
+        "type": "mqtt in",
+        "z": "flow_iot_db",
+        "name": "Sub: data/sensor",
+        "topic": "data/sensor",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_cfg",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 160,
+        "y": 100,
+        "wires": [
+            [
+                "fn_split_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "fn_split_sensor",
+        "type": "function",
+        "z": "flow_iot_db",
+        "name": "Tach du lieu cam bien",
+        "func": "var data = msg.payload;\nif (typeof data === \"string\") {\n    data = JSON.parse(data);\n}\n\n// Ghi nhan NodeMCU con song (heartbeat qua telemetry data/sensor)\nglobal.set(\"nodemcu_last_seen\", Date.now());\nglobal.set(\"nodemcu_online\", true);\n\nvar now = new Date();\nvar q = \"INSERT INTO data_sensors (sensor_id, value, recorded_at) VALUES (?, ?, ?)\";\n\nvar msgs = [\n    { topic: q, payload: [1, data.temp, now] },\n    { topic: q, payload: [2, data.hum, now] },\n    { topic: q, payload: [3, data.light, now] }\n];\n\nreturn [msgs];",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 410,
+        "y": 100,
+        "wires": [
+            [
+                "mysql_insert_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "mysql_insert_sensor",
+        "type": "mysql",
+        "z": "flow_iot_db",
+        "mydb": "mysql_db_cfg",
+        "name": "INSERT data_sensors",
+        "x": 680,
+        "y": 100,
+        "wires": [
+            [
+                "debug_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "debug_sensor",
+        "type": "debug",
+        "z": "flow_iot_db",
+        "name": "Debug: da ghi cam bien",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 930,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "mqtt_in_led1",
+        "type": "mqtt in",
+        "z": "flow_iot_db",
+        "name": "Sub: device/control/led1",
+        "topic": "device/control/led1",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "mqtt_broker_cfg",
+        "inputs": 0,
+        "x": 170,
+        "y": 220,
+        "wires": [
+            [
+                "fn_log_command"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_in_led2",
+        "type": "mqtt in",
+        "z": "flow_iot_db",
+        "name": "Sub: device/control/led2",
+        "topic": "device/control/led2",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "mqtt_broker_cfg",
+        "inputs": 0,
+        "x": 170,
+        "y": 260,
+        "wires": [
+            [
+                "fn_log_command"
+            ]
+        ]
+    },
+    {
+        "id": "fn_log_command",
+        "type": "function",
+        "z": "flow_iot_db",
+        "name": "Ghi log lenh gui di",
+        "func": "var device = msg.topic.indexOf(\"led1\") !== -1 ? \"led1\" : \"led2\";\nvar actionText = device + \":\" + msg.payload;\nvar deviceId = (device === \"led1\") ? 1 : 2;\n\nvar key = \"ui_cmd_\" + device;\nvar list = (global.get(key) || []).filter(function (item) {\n    var t = (typeof item === \"object\") ? item.time : item;\n    return Date.now() - t < 5000;\n});\nvar fromUI = list.length > 0;\nvar userId = null;\nif (fromUI) {\n    var cmd = list.shift();\n    userId = (typeof cmd === \"object\" && cmd.user_id) ? cmd.user_id : 1;\n}\nglobal.set(key, list);\n\nmsg.topic = \"INSERT INTO actions (device_id, user_id, action, status, time) VALUES (?, ?, ?, 'pending', NOW(3))\";\nmsg.payload = [deviceId, userId, actionText];\nmsg._device = device;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 420,
+        "y": 240,
+        "wires": [
+            [
+                "mysql_insert_action"
+            ]
+        ]
+    },
+    {
+        "id": "mysql_insert_action",
+        "type": "mysql",
+        "z": "flow_iot_db",
+        "mydb": "mysql_db_cfg",
+        "name": "INSERT actions (pending)",
+        "x": 690,
+        "y": 240,
+        "wires": [
+            [
+                "fn_store_pending"
+            ]
+        ]
+    },
+    {
+        "id": "fn_store_pending",
+        "type": "function",
+        "z": "flow_iot_db",
+        "name": "Luu action_id + dat timeout 5s",
+        "func": "var insertId = msg.payload.insertId;\nvar device = msg._device;\n\n// Ghi nho lenh dang cho phan hoi cua tung den\nflow.set(\"pending_\" + device, insertId);\n\nsetTimeout(function () {\n    // Luon thu danh dau timeout sau 5s. Dieu kien status='pending' trong SQL dam bao\n    // khong ghi de ban ghi da duoc cap nhat success/failed; ban ghi bi lenh moi ghi de\n    // (bam cong tac lien tuc) cung se khong bi ket o 'pending'.\n    node.send({\n        topic: \"UPDATE actions SET status='timeout' WHERE action_id=? AND status='pending'\",\n        payload: [insertId]\n    });\n    node.done();\n    if (flow.get(\"pending_\" + device) === insertId) {\n        flow.set(\"pending_\" + device, null);\n    }\n}, 5000);\n\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 960,
+        "y": 240,
+        "wires": [
+            [
+                "mysql_update_timeout"
+            ]
+        ]
+    },
+    {
+        "id": "mysql_update_timeout",
+        "type": "mysql",
+        "z": "flow_iot_db",
+        "mydb": "mysql_db_cfg",
+        "name": "UPDATE actions (timeout)",
+        "x": 1220,
+        "y": 300,
+        "wires": [
+            [
+                "debug_action"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_in_response",
+        "type": "mqtt in",
+        "z": "flow_iot_db",
+        "name": "Sub: device/response",
+        "topic": "device/response",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_cfg",
+        "inputs": 0,
+        "x": 180,
+        "y": 400,
+        "wires": [
+            [
+                "fn_update_response"
+            ]
+        ]
+    },
+    {
+        "id": "fn_update_response",
+        "type": "function",
+        "z": "flow_iot_db",
+        "name": "Cap nhat phan hoi hanh dong",
+        "func": "var data = msg.payload;\nif (typeof data === \"string\") {\n    try { data = JSON.parse(data); } catch(e) {}\n}\n\nif (!data || !data.device) {\n    return null;\n}\n\n// Bat tin nhan LWT va ket noi cua NodeMCU\nif (data.device === \"node\") {\n    if (data.state === \"ONLINE\") {\n        global.set(\"nodemcu_online\", true);\n        global.set(\"nodemcu_last_seen\", Date.now());\n    } else if (data.state === \"OFFLINE\") {\n        global.set(\"nodemcu_online\", false);\n    }\n    return null;\n}\n\nvar actionId = flow.get(\"pending_\" + data.device);\nif (!actionId) {\n    return null;\n}\n\nflow.set(\"pending_\" + data.device, null);\n\nvar dbStatus = (data.status === \"success\") ? \"success\" : \"failed\";\n\nmsg.topic = \"UPDATE actions SET status=?, time_response=NOW(3) WHERE action_id=?\";\nmsg.payload = [dbStatus, actionId];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 440,
+        "y": 400,
+        "wires": [
+            [
+                "mysql_update_response"
+            ]
+        ]
+    },
+    {
+        "id": "mysql_update_response",
+        "type": "mysql",
+        "z": "flow_iot_db",
+        "mydb": "mysql_db_cfg",
+        "name": "UPDATE actions (phan hoi)",
+        "x": 710,
+        "y": 400,
+        "wires": [
+            [
+                "debug_action"
+            ]
+        ]
+    },
+    {
+        "id": "debug_action",
+        "type": "debug",
+        "z": "flow_iot_db",
+        "name": "Debug: cap nhat actions",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1230,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "h_dash",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "GET /api/dashboard",
+        "url": "/api/dashboard",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 60,
+        "wires": [
+            [
+                "fn_dash_q1"
+            ]
+        ]
+    },
+    {
+        "id": "fn_dash_q1",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Query 1: 30 ban ghi gan nhat",
+        "func": "msg.topic = \"SELECT sensor_id, value, recorded_at FROM data_sensors ORDER BY recorded_at DESC LIMIT 30\";\nmsg.payload = [];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 350,
+        "y": 60,
+        "wires": [
+            [
+                "m_dash_1"
+            ]
+        ]
+    },
+    {
+        "id": "m_dash_1",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT data_sensors",
+        "x": 610,
+        "y": 60,
+        "wires": [
+            [
+                "fn_dash_q2"
+            ]
+        ]
+    },
+    {
+        "id": "fn_dash_q2",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Xu ly + query 2: trang thai LED",
+        "func": "var rows = msg.payload;\nvar bySensor = {1: [], 2: [], 3: []};\nrows.forEach(function (r) { if (bySensor[r.sensor_id]) bySensor[r.sensor_id].push(r); });\n\nvar chart = {};\nvar latest = {};\n[1, 2, 3].forEach(function (sid) {\n    var arr = bySensor[sid].slice(0, 10).reverse();\n    chart[sid] = arr.map(function (r) { return { t: r.recorded_at, v: parseFloat(r.value) }; });\n    latest[sid] = arr.length ? parseFloat(arr[arr.length - 1].value) : null;\n});\n\nmsg._latest = latest;\nmsg._chart = chart;\nmsg.topic = \"SELECT action, time FROM actions WHERE status=\\'success\\' AND (action LIKE \\'led1:%\\' OR action LIKE \\'led2:%\\') ORDER BY time DESC LIMIT 20\";\nmsg.payload = [];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 860,
+        "y": 60,
+        "wires": [
+            [
+                "m_dash_2"
+            ]
+        ]
+    },
+    {
+        "id": "m_dash_2",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT trang thai LED",
+        "x": 1120,
+        "y": 60,
+        "wires": [
+            [
+                "fn_dash_final"
+            ]
+        ]
+    },
+    {
+        "id": "fn_dash_final",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Ghep ket qua cuoi",
+        "func": "var rows = msg.payload;\nvar led1 = \"OFF\", led2 = \"OFF\", found1 = false, found2 = false;\n\nfor (var i = 0; i < rows.length; i++) {\n    var a = rows[i].action;\n    if (!found1 && a.indexOf(\"led1:\") === 0) { led1 = a.split(\":\")[1]; found1 = true; }\n    if (!found2 && a.indexOf(\"led2:\") === 0) { led2 = a.split(\":\")[1]; found2 = true; }\n    if (found1 && found2) break;\n}\n\nvar threshold = global.get(\"light_threshold\") || 800;\nvar isAlert = global.get(\"light_alert_active\") || false;\nvar curLight = msg._latest[3];\nif (curLight != null && curLight >= threshold) {\n    isAlert = true;\n}\n\nvar lastSeen = global.get(\"nodemcu_last_seen\") || 0;\nvar nodeOnline = global.get(\"nodemcu_online\");\n// NodeMCU phat telemetry 5s/lan. Neu qua 9s khong co ban ghi -> Offline ngay lap tuc!\nvar isNodeOnline = (nodeOnline !== false) && (lastSeen > 0) && (Date.now() - lastSeen < 9000);\nif (nodeOnline === false || (lastSeen > 0 && Date.now() - lastSeen >= 9000)) {\n    isNodeOnline = false;\n}\n\nmsg.payload = {\n    temp: msg._latest[1], hum: msg._latest[2], light: msg._latest[3],\n    led1: led1, led2: led2, chart: msg._chart,\n    light_threshold: threshold,\n    is_light_alert: isAlert,\n    nodemcu_online: isNodeOnline,\n    nodemcu_last_seen: lastSeen\n};\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Methods\": \"GET, POST, OPTIONS\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1370,
+        "y": 60,
+        "wires": [
+            [
+                "h_dash_resp",
+                "dbg_dash"
+            ]
+        ]
+    },
+    {
+        "id": "h_dash_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response dashboard",
+        "statusCode": "",
+        "headers": {},
+        "x": 1620,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "dbg_dash",
+        "type": "debug",
+        "z": "flow_dashboard_api",
+        "name": "Debug: /api/dashboard",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1620,
+        "y": 90,
+        "wires": []
+    },
+    {
+        "id": "h_sensors",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "GET /api/sensors",
+        "url": "/api/sensors",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 200,
+        "wires": [
+            [
+                "fn_sensors_q1"
+            ]
+        ]
+    },
+    {
+        "id": "fn_sensors_q1",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Build query du lieu + phan trang",
+        "func": "// Nhan hien thi cua loai cam bien (tieng Viet)\nvar TYPE_LABEL = \"CASE s.sensor_type WHEN 'temperature' THEN 'Nhiệt độ' WHEN 'humidity' THEN 'Độ ẩm' WHEN 'light' THEN 'Ánh sáng' ELSE s.sensor_type END\";\n\nvar q = msg.req.query || {};\nvar search = (q.search || \"\").trim();\nvar field = (q.field || \"all\").trim();   // all | id | name | type | value | unit | time\nvar type = (q.type || \"\").trim();        // (tuy chon) loc cung theo loai: temperature | humidity | light\nvar page = Math.max(parseInt(q.page) || 1, 1);\nvar pageSize = Math.min(Math.max(parseInt(q.pageSize) || 10, 1), 100);   // toi da 100 dong/trang\nvar offset = (page - 1) * pageSize;\n\nvar where = [];\nvar params = [];\nif (type) { where.push(\"s.sensor_type = ?\"); params.push(type); }\n\nif (search) {\n    var like = \"%\" + search.replace(/[\\\\%_]/g, \"\\\\$&\") + \"%\";   // escape % _ \\ de tim dung ky tu nguoi dung go\n    // Moi cot co the tim: [dieu kien SQL, so dau ? trong dieu kien]\n    var cols = {\n        id:    [\"CAST(d.data_id AS CHAR) LIKE ?\", 1],\n        name:  [\"s.sensor_name LIKE ?\", 1],\n        type:  [\"(s.sensor_type LIKE ? OR \" + TYPE_LABEL + \" LIKE ?)\", 2],\n        value: [\"CAST(d.value AS CHAR) LIKE ?\", 1],\n        unit:  [\"s.unit LIKE ?\", 1],\n        time:  [\"DATE_FORMAT(d.recorded_at, '%Y-%m-%d %H:%i:%s') LIKE ?\", 1]\n    };\n    var keys = cols[field] ? [field] : Object.keys(cols);   // \"Tat ca\": khop o bat ky cot nao\n    var parts = keys.map(function (k) {\n        for (var i = 0; i < cols[k][1]; i++) params.push(like);\n        return cols[k][0];\n    });\n    where.push(parts.length > 1 ? \"(\" + parts.join(\" OR \") + \")\" : parts[0]);\n}\nvar whereSQL = where.length ? (\"WHERE \" + where.join(\" AND \")) : \"\";\n\nmsg._page = page; msg._pageSize = pageSize; msg._where = whereSQL; msg._params = params;\n\nmsg.topic = \"SELECT d.data_id, s.sensor_name, s.sensor_type, \" + TYPE_LABEL + \" AS sensor_type_label, s.unit, d.value, d.recorded_at \" +\n            \"FROM data_sensors d JOIN sensors s ON s.sensor_id = d.sensor_id \" + whereSQL +\n            \" ORDER BY d.recorded_at DESC, d.data_id DESC LIMIT ? OFFSET ?\";\nmsg.payload = params.concat([pageSize, offset]);\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 380,
+        "y": 200,
+        "wires": [
+            [
+                "m_sensors_1"
+            ]
+        ]
+    },
+    {
+        "id": "m_sensors_1",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT data_sensors (co loc)",
+        "x": 680,
+        "y": 200,
+        "wires": [
+            [
+                "fn_sensors_q2"
+            ]
+        ]
+    },
+    {
+        "id": "fn_sensors_q2",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Build query dem tong so dong",
+        "func": "msg._rows = msg.payload;\nmsg.topic = \"SELECT COUNT(*) AS total FROM data_sensors d JOIN sensors s ON s.sensor_id = d.sensor_id \" + msg._where;\nmsg.payload = msg._params;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 940,
+        "y": 200,
+        "wires": [
+            [
+                "m_sensors_2"
+            ]
+        ]
+    },
+    {
+        "id": "m_sensors_2",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "COUNT(*) data_sensors",
+        "x": 1220,
+        "y": 200,
+        "wires": [
+            [
+                "fn_sensors_final"
+            ]
+        ]
+    },
+    {
+        "id": "fn_sensors_final",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Ghep ket qua cuoi",
+        "func": "msg.payload = {\n    rows: msg._rows,\n    total: msg.payload[0].total,\n    page: msg._page,\n    pageSize: msg._pageSize\n};\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1470,
+        "y": 200,
+        "wires": [
+            [
+                "h_sensors_resp",
+                "dbg_sensors"
+            ]
+        ]
+    },
+    {
+        "id": "h_sensors_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response sensors",
+        "statusCode": "",
+        "headers": {},
+        "x": 1720,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "dbg_sensors",
+        "type": "debug",
+        "z": "flow_dashboard_api",
+        "name": "Debug: /api/sensors",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1720,
+        "y": 230,
+        "wires": []
+    },
+    {
+        "id": "h_actions",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "GET /api/actions",
+        "url": "/api/actions",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 340,
+        "wires": [
+            [
+                "fn_actions_q1"
+            ]
+        ]
+    },
+    {
+        "id": "fn_actions_q1",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Build query du lieu + phan trang",
+        "func": "var q = msg.req.query || {};\nvar device = (q.device || \"\").trim();\nvar status = (q.status || \"\").trim();\nvar action = (q.action || \"\").trim().toUpperCase();  // ON | OFF\nvar time = (q.time || \"\").trim();                    // vd: 2026-10-09 hoac 2026-10-09 14:30\nvar page = Math.max(parseInt(q.page) || 1, 1);\nvar pageSize = Math.min(Math.max(parseInt(q.pageSize) || 10, 1), 100);   // toi da 100 dong/trang\nvar offset = (page - 1) * pageSize;\n\nvar where = [];\nvar params = [];\nif (device) { where.push(\"a.device_id = ?\"); params.push(device); }\nif (status) { where.push(\"a.status = ?\"); params.push(status); }\nif (action === \"ON\" || action === \"OFF\") { where.push(\"a.action LIKE ?\"); params.push(\"%:\" + action); }\nif (time) { where.push(\"DATE_FORMAT(a.time, '%Y-%m-%d %H:%i:%s') LIKE ?\"); params.push(\"%\" + time.replace(/[\\\\%_]/g, \"\\\\$&\") + \"%\"); }\nvar whereSQL = where.length ? (\"WHERE \" + where.join(\" AND \")) : \"\";\n\nmsg._page = page; msg._pageSize = pageSize; msg._where = whereSQL; msg._params = params;\n\nmsg.topic = \"SELECT a.action_id, a.device_id, d.device_name, a.user_id, u.full_name AS user_full_name, u.username AS user_username, a.action, a.status, a.time, a.time_response FROM actions a LEFT JOIN devices d ON d.device_id = a.device_id LEFT JOIN users u ON u.user_id = a.user_id \" + whereSQL + \" ORDER BY a.time DESC, a.action_id DESC LIMIT ? OFFSET ?\";\nmsg.payload = params.concat([pageSize, offset]);\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 380,
+        "y": 340,
+        "wires": [
+            [
+                "m_actions_1"
+            ]
+        ]
+    },
+    {
+        "id": "m_actions_1",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT actions (co loc)",
+        "x": 680,
+        "y": 340,
+        "wires": [
+            [
+                "fn_actions_q2"
+            ]
+        ]
+    },
+    {
+        "id": "fn_actions_q2",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Build query dem tong so dong",
+        "func": "msg._rows = msg.payload;\nmsg.topic = \"SELECT COUNT(*) AS total FROM actions a \" + msg._where;\nmsg.payload = msg._params;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 940,
+        "y": 340,
+        "wires": [
+            [
+                "m_actions_2"
+            ]
+        ]
+    },
+    {
+        "id": "m_actions_2",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "COUNT(*) actions",
+        "x": 1220,
+        "y": 340,
+        "wires": [
+            [
+                "fn_actions_final"
+            ]
+        ]
+    },
+    {
+        "id": "fn_actions_final",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Ghep ket qua + tinh thoi gian phan hoi",
+        "func": "var rows = msg._rows.map(function (r) {\n    var ms = null;\n    if (r.time_response) {\n        ms = new Date(r.time_response).getTime() - new Date(r.time).getTime();\n    } else if (r.status === \"timeout\") {\n        ms = 5000; // het han cho phan hoi (5s) theo co che timeout o flow ghi log\n    }\n    r.response_ms = ms;\n    // Nguoi thuc hien: user trong DB neu lenh den tu giao dien web, nguoc lai la \"MQTT\"\n    // (lenh gui thang qua MQTT, vd mosquitto_pub o terminal)\n    r.operator = r.user_id ? (r.user_full_name || r.user_username || \"Người dùng\") : \"MQTT\";\n    return r;\n});\n\nmsg.payload = { rows: rows, total: msg.payload[0].total, page: msg._page, pageSize: msg._pageSize };\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1470,
+        "y": 340,
+        "wires": [
+            [
+                "h_actions_resp",
+                "dbg_actions"
+            ]
+        ]
+    },
+    {
+        "id": "h_actions_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response actions",
+        "statusCode": "",
+        "headers": {},
+        "x": 1720,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "dbg_actions",
+        "type": "debug",
+        "z": "flow_dashboard_api",
+        "name": "Debug: /api/actions",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1720,
+        "y": 370,
+        "wires": []
+    },
+    {
+        "id": "h_control",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "POST /api/control",
+        "url": "/api/control",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 480,
+        "wires": [
+            [
+                "fn_control_build"
+            ]
+        ]
+    },
+    {
+        "id": "fn_control_build",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Kiem tra + tao lenh MQTT",
+        "func": "var body = msg.payload || {};\nvar device = body.device;\nvar action = (body.action || \"\").toUpperCase();\n\nvar authHeader = (msg.req && msg.req.headers && msg.req.headers[\"authorization\"]) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (body.token) {\n    token = body.token;\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = token ? sessions[token] : null;\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 3, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 2, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\nif (!session && !token) { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Vui lòng đăng nhập để thực hiện điều khiển thiết bị\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Cả admin và user đều có quyền điều khiển thiết bị\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Bạn không có quyền điều khiển thiết bị\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif ((device !== \"led1\" && device !== \"led2\") || (action !== \"ON\" && action !== \"OFF\")) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: \"device phải là led1/led2, action phải là ON/OFF\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar key = \"ui_cmd_\" + device;\nvar list = (global.get(key) || []).filter(function (item) {\n    var t = (typeof item === \"object\") ? item.time : item;\n    return Date.now() - t < 5000;\n});\nlist.push({ time: Date.now(), user_id: session.user_id });\nglobal.set(key, list);\n\nmsg.topic = \"device/control/\" + device;\nmsg.payload = action;\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "x": 380,
+        "y": 480,
+        "wires": [
+            [
+                "m_control_out",
+                "fn_control_success"
+            ],
+            [
+                "h_control_resp"
+            ]
+        ]
+    },
+    {
+        "id": "m_control_out",
+        "type": "mqtt out",
+        "z": "flow_dashboard_api",
+        "name": "PUB device/control/*",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "broker": "mqtt_broker_cfg",
+        "x": 660,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "fn_control_success",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Tao phan hoi thanh cong",
+        "func": "msg.payload = { ok: true, device: msg.topic.split(\"/\").pop(), action: msg.payload };\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 660,
+        "y": 520,
+        "wires": [
+            [
+                "h_control_resp"
+            ]
+        ]
+    },
+    {
+        "id": "h_control_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response control",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 490,
+        "wires": []
+    },
+    {
+        "id": "h_profile",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "GET /api/profile",
+        "url": "/api/profile",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 580,
+        "wires": [
+            [
+                "fn_profile_q"
+            ]
+        ]
+    },
+    {
+        "id": "fn_profile_q",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Query profile (bang users)",
+        "func": "msg.topic = \"SELECT user_id, username, full_name, email FROM users ORDER BY user_id LIMIT 1\";\nmsg.payload = [];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 400,
+        "y": 580,
+        "wires": [
+            [
+                "m_profile"
+            ]
+        ]
+    },
+    {
+        "id": "m_profile",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT users",
+        "x": 620,
+        "y": 580,
+        "wires": [
+            [
+                "fn_profile_final"
+            ]
+        ]
+    },
+    {
+        "id": "fn_profile_final",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Tao phan hoi profile",
+        "func": "var r = (msg.payload && msg.payload[0]) || {};\nmsg.payload = { username: r.username || \"\", full_name: r.full_name || \"\", email: r.email || \"\" };\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 840,
+        "y": 580,
+        "wires": [
+            [
+                "h_profile_resp"
+            ]
+        ]
+    },
+    {
+        "id": "h_profile_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response profile",
+        "statusCode": "",
+        "headers": {},
+        "x": 1050,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "h_login",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "POST /api/login",
+        "url": "/api/login",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 680,
+        "wires": [
+            [
+                "fn_login_q"
+            ]
+        ]
+    },
+    {
+        "id": "fn_login_q",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Kiem tra tham so login",
+        "func": "var body = msg.payload || {};\nvar username = (body.username || \"\").trim();\nvar password = (body.password || \"\").trim();\n\nif (!username || !password) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: \"Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nmsg._loginPassword = password;\nmsg.topic = \"SELECT user_id, username, password, full_name, email, role, status FROM users WHERE username = ? LIMIT 1\";\nmsg.payload = [username];\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "x": 360,
+        "y": 680,
+        "wires": [
+            [
+                "m_login"
+            ],
+            [
+                "h_login_resp"
+            ]
+        ]
+    },
+    {
+        "id": "m_login",
+        "type": "mysql",
+        "z": "flow_dashboard_api",
+        "mydb": "mysql_db_cfg",
+        "name": "SELECT user for login",
+        "x": 620,
+        "y": 660,
+        "wires": [
+            [
+                "fn_login_verify"
+            ]
+        ]
+    },
+    {
+        "id": "fn_login_verify",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Xac thuc pass + tao token",
+        "func": "var rows = msg.payload || [];\nif (!rows.length) {\n    var reqUser = (msg.req && msg.req.body && msg.req.body.username) || \"\";\n    if (reqUser === \"user\" && msg._loginPassword === \"user123\") {\n        var token = \"iot_\" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);\n        var sessions = global.get(\"sessions\") || {};\n        var mockUser = {\n            user_id: 3,\n            username: \"user\",\n            full_name: \"Người dùng\",\n            email: \"user@iot.local\",\n            role: \"user\",\n            login_at: Date.now()\n        };\n        sessions[token] = mockUser;\n        global.set(\"sessions\", sessions);\n\n        msg.statusCode = 200;\n        msg.payload = {\n            ok: true,\n            token: token,\n            user: mockUser\n        };\n        msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n        return msg;\n    }\n\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Tên đăng nhập không tồn tại\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return msg;\n}\n\nvar u = rows[0];\nif (u.status !== 1) {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản đang bị khóa\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return msg;\n}\n\nif (u.password !== msg._loginPassword) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Mật khẩu không chính xác\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return msg;\n}\n\nvar token = \"iot_\" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36) + Math.random().toString(36).substring(2, 10);\nvar sessions = global.get(\"sessions\") || {};\nsessions[token] = {\n    user_id: u.user_id,\n    username: u.username,\n    full_name: u.full_name,\n    email: u.email,\n    role: u.role || \"viewer\",\n    login_at: Date.now()\n};\nglobal.set(\"sessions\", sessions);\n\nmsg.statusCode = 200;\nmsg.payload = {\n    ok: true,\n    token: token,\n    user: {\n        user_id: u.user_id,\n        username: u.username,\n        full_name: u.full_name,\n        email: u.email,\n        role: u.role || \"viewer\"\n    }\n};\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 860,
+        "y": 660,
+        "wires": [
+            [
+                "h_login_resp"
+            ]
+        ]
+    },
+    {
+        "id": "h_login_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response login",
+        "statusCode": "",
+        "headers": {},
+        "x": 1080,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "h_logout",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "POST /api/logout",
+        "url": "/api/logout",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 760,
+        "wires": [
+            [
+                "fn_logout"
+            ]
+        ]
+    },
+    {
+        "id": "fn_logout",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Xu ly dang xuat",
+        "func": "var body = msg.payload || {};\nvar authHeader = (msg.req && msg.req.headers && msg.req.headers[\"authorization\"]) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (body.token) {\n    token = body.token;\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (token) {\n    var sessions = global.get(\"sessions\") || {};\n    delete sessions[token];\n    global.set(\"sessions\", sessions);\n}\n\nmsg.statusCode = 200;\nmsg.payload = { ok: true, message: \"Đã đăng xuất thành công\" };\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 360,
+        "y": 760,
+        "wires": [
+            [
+                "h_logout_resp"
+            ]
+        ]
+    },
+    {
+        "id": "h_logout_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response logout",
+        "statusCode": "",
+        "headers": {},
+        "x": 600,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "h_me",
+        "type": "http in",
+        "z": "flow_dashboard_api",
+        "name": "GET /api/me",
+        "url": "/api/me",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 840,
+        "wires": [
+            [
+                "fn_me"
+            ]
+        ]
+    },
+    {
+        "id": "fn_me",
+        "type": "function",
+        "z": "flow_dashboard_api",
+        "name": "Lay thong tin user hien tai",
+        "func": "var authHeader = (msg.req && msg.req.headers && msg.req.headers[\"authorization\"]) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = token ? sessions[token] : null;\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Chưa đăng nhập hoặc phiên đã hết hạn\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { ok: true, user: session };\n}\nmsg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 360,
+        "y": 840,
+        "wires": [
+            [
+                "h_me_resp"
+            ]
+        ]
+    },
+    {
+        "id": "h_me_resp",
+        "type": "http response",
+        "z": "flow_dashboard_api",
+        "name": "Response me",
+        "statusCode": "",
+        "headers": {},
+        "x": 600,
+        "y": 840,
+        "wires": []
+    }
+]

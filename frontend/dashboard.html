@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figma UI - IoT Dashboard</title>
+    <!-- Tích hợp Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tích hợp Chart.js cho biểu đồ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tích hợp FontAwesome cho Icon -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Đảm bảo không cuộn toàn trang */
+        body {
+            overflow: hidden;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* Tuỳ chỉnh Scrollbar cho bảng nếu data quá dài */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen bg-gray-100 flex font-sans text-sm">
+    <!-- MODAL ĐĂNG NHẬP (Chỉ Tên đăng nhập + Mật khẩu, không có tài khoản mẫu) -->
+    <div id="login-modal"
+        class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 relative">
+            <button onclick="hideLoginModal()"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-lg transition">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div
+                    class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Đăng Nhập Hệ Thống</h2>
+                <p class="text-gray-500 text-xs mt-1">Hệ thống Giám sát & Điều khiển IoT (PTIT)</p>
+            </div>
+
+            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); submitLogin();">
+                <div id="login-error"
+                    class="hidden bg-red-50 text-red-700 text-xs p-3 rounded-lg border border-red-200 font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3.5 top-3.5 text-gray-400"></i>
+                        <input type="text" id="login-username" required placeholder="Nhập tài khoản"
+                            class="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Mật khẩu</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3.5 top-3.5 text-gray-400"></i>
+                        <input type="password" id="login-password" required placeholder="Nhập mật khẩu"
+                            class="w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300">
+                        <button type="button" onclick="togglePasswordVisibility()"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 p-0.5"
+                            title="Ẩn/hiện mật khẩu">
+                            <i id="login-pwd-eye" class="fas fa-eye text-sm text-gray-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="login-submit-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Đăng nhập</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- CỘT TRÁI: MENU CỐ ĐỊNH (~140px) -->
+    <aside class="w-[140px] bg-slate-800 text-white flex flex-col h-full shrink-0 shadow-lg justify-between">
+        <div>
+            <div
+                class="h-16 flex items-center justify-center border-b border-slate-700 font-bold text-lg text-blue-400">
+                <i class="fas fa-microchip mr-2"></i> IoT App
+            </div>
+            <nav class="flex flex-col mt-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard"
+                    class="menu-btn bg-slate-700 border-l-4 border-blue-500 py-4 px-2 flex flex-col items-center hover:bg-slate-700 transition">
+                    <i class="fas fa-chart-pie text-xl mb-1"></i>
+                    <span class="text-xs text-center">Dashboard</span>
+                </button>
+                <button onclick="switchTab('datasensor')" id="btn-datasensor"
+                    class="menu-btn border-l-4 border-transparent py-4 px-2 flex flex-col items-center hover:bg-slate-700 text-slate-300 transition">
+                    <i class="fas fa-table text-xl mb-1"></i>
+                    <span class="text-xs text-center">Data sensor</span>
+                </button>
+                <button onclick="switchTab('actionhistory')" id="btn-actionhistory"
+                    class="menu-btn border-l-4 border-transparent py-4 px-2 flex flex-col items-center hover:bg-slate-700 text-slate-300 transition">
+                    <i class="fas fa-history text-xl mb-1"></i>
+                    <span class="text-xs text-center">Action history</span>
+                </button>
+                <button onclick="switchTab('profile')" id="btn-profile"
+                    class="menu-btn border-l-4 border-transparent py-4 px-2 flex flex-col items-center hover:bg-slate-700 text-slate-300 transition">
+                    <i class="fas fa-user-graduate text-xl mb-1"></i>
+                    <span class="text-xs text-center">Profile</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- THÔNG TIN NGƯỜI DÙNG & ĐĂNG XUẤT (Đối chiếu Hình 1) -->
+        <div class="p-3 border-t border-slate-700 bg-slate-900/60">
+            <div class="flex items-center gap-2 mb-2.5">
+                <div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow"
+                    id="sidebar-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold truncate text-white" id="sidebar-user-name">Quản trị viên</p>
+                    <span id="sidebar-role-badge"
+                        class="inline-block text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-red-900/60 text-red-300 border border-red-700/50">ADMIN</span>
+                </div>
+            </div>
+
+            <button onclick="handleAuthAction()" id="btn-auth-action"
+                class="w-full py-1.5 px-2 text-xs bg-red-950/40 hover:bg-red-800 text-red-300 hover:text-white rounded-lg transition flex items-center justify-center gap-1.5 font-medium border border-red-800/40"
+                title="Đăng xuất khỏi hệ thống">
+                <i class="fas fa-sign-out-alt text-xs" id="auth-action-icon"></i>
+                <span id="auth-action-text">Đăng xuất</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- CỘT PHẢI: NỘI DUNG CHÍNH -->
+    <main class="flex-1 flex flex-col p-4 h-full overflow-hidden">
+
+        <!-- ================= MÀN HÌNH 1.1: DASHBOARD ================= -->
+        <div id="tab-dashboard" class="tab-content active flex-col h-full w-full gap-4">
+            <!-- Cảnh báo khi NodeMCU mất kết nối -->
+            <div id="nodemcu-disconnect-alert" class="hidden p-3.5 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm flex items-center justify-between text-red-700 animate-pulse transition-all shrink-0">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-satellite-dish text-xl text-red-500"></i>
+                    <div>
+                        <p class="font-bold text-xs uppercase tracking-wide">Cảnh báo: Mất kết nối với thiết bị NodeMCU ESP8266!</p>
+                        <p class="text-xs text-red-600 mt-0.5">Không nhận được dữ liệu cảm biến từ NodeMCU. Vui lòng kiểm tra lại</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-bold px-2.5 py-1 rounded bg-red-200 text-red-800 uppercase tracking-wider shrink-0 font-mono">
+                    DISCONNECTED
+                </span>
+            </div>
+
+            <!-- Hàng trên: 3 thẻ số liệu (nhiệt độ, độ ẩm, ánh sáng) -->
+            <div class="flex gap-4 h-[120px] shrink-0">
+                <!-- Thẻ Nhiệt độ -->
+                <div
+                    class="flex-1 bg-white rounded-xl shadow p-4 flex items-center justify-between border-l-4 border-red-500">
+                    <div>
+                        <p class="text-gray-500 font-semibold mb-1">Nhiệt độ</p>
+                        <p class="text-3xl font-bold text-gray-800"><span id="card-temp">--</span><span
+                                class="text-lg">°C</span></p>
+                    </div>
+                    <i class="fas fa-temperature-high text-4xl text-red-500 opacity-80"></i>
+                </div>
+                <!-- Thẻ Độ ẩm -->
+                <div
+                    class="flex-1 bg-white rounded-xl shadow p-4 flex items-center justify-between border-l-4 border-blue-500">
+                    <div>
+                        <p class="text-gray-500 font-semibold mb-1">Độ ẩm</p>
+                        <p class="text-3xl font-bold text-gray-800"><span id="card-hum">--</span><span
+                                class="text-lg">%</span></p>
+                    </div>
+                    <i class="fas fa-tint text-4xl text-blue-500 opacity-80"></i>
+                </div>
+                <!-- Thẻ Ánh sáng -->
+                <div
+                    class="flex-1 bg-white rounded-xl shadow p-4 flex items-center justify-between border-l-4 border-yellow-500">
+                    <div>
+                        <p class="text-gray-500 font-semibold mb-1">Ánh sáng</p>
+                        <p class="text-3xl font-bold text-gray-800"><span id="card-light">--</span><span
+                                class="text-lg"> lux</span></p>
+                    </div>
+                    <i class="fas fa-sun text-4xl text-yellow-500 opacity-80"></i>
+                </div>
+            </div>
+
+            <!-- Hàng dưới: Biểu đồ (bên trái) + khung công tắc thiết bị (bên phải) -->
+            <div class="flex-1 flex gap-4 min-h-0">
+                <div class="flex-1 min-w-0 bg-white rounded-xl shadow p-4 min-h-0 flex flex-col">
+                    <h3 class="text-gray-700 font-bold mb-2">Biểu đồ giám sát thời gian thực</h3>
+                    <div class="flex-1 relative w-full h-full">
+                        <canvas id="realtimeChart"></canvas>
+                    </div>
+                </div>
+                <div
+                    class="w-72 shrink-0 bg-white rounded-xl shadow p-4 flex flex-col gap-3 border-t-4 border-green-500">
+                    <h3 class="text-gray-700 font-bold">Điều khiển thiết bị</h3>
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                        <div class="flex flex-col">
+                            <span class="text-gray-700 font-semibold">Đèn 1</span>
+                            <span class="text-xs font-bold text-gray-500 whitespace-nowrap" id="led1-status">--</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input type="checkbox" id="led1-toggle" class="sr-only peer">
+                            <div
+                                class="relative w-12 h-6 bg-gray-200 rounded-full peer-checked:bg-green-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6 peer-checked:after:border-white">
+                            </div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                        <div class="flex flex-col">
+                            <span class="text-gray-700 font-semibold">Đèn 2</span>
+                            <span class="text-xs font-bold text-gray-500 whitespace-nowrap" id="led2-status">--</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input type="checkbox" id="led2-toggle" class="sr-only peer">
+                            <div
+                                class="relative w-12 h-6 bg-gray-200 rounded-full peer-checked:bg-green-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6 peer-checked:after:border-white">
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MÀN HÌNH 1.2: DATASENSOR ================= -->
+        <div id="tab-datasensor" class="tab-content flex-col h-full w-full gap-4">
+            <!-- Phần trên: Tìm kiếm + Loại cảm biến (có Thời gian) -->
+            <div class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow shrink-0">
+                <i class="fas fa-search text-gray-400"></i>
+                <div class="flex-1 flex flex-col">
+                    <label for="ds-search" class="text-xs text-gray-500 mb-1">Tìm kiếm</label>
+                    <input type="text" id="ds-search" placeholder="Nhập giá trị cần tìm..."
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="flex flex-col w-56">
+                    <label for="ds-type" class="text-xs text-gray-500 mb-1">Loại cảm biến</label>
+                    <select id="ds-type"
+                        class="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-500">
+                        <option value="">Tất cả</option>
+                        <option value="temperature">Nhiệt độ</option>
+                        <option value="humidity">Độ ẩm</option>
+                        <option value="light">Ánh sáng</option>
+                        <option value="time">Thời gian</option>
+                    </select>
+                </div>
+                <button id="ds-search-btn"
+                    class="self-end bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 font-semibold">Tìm
+                    kiếm</button>
+            </div>
+
+            <!-- Phần dưới: Bảng & Phân trang -->
+            <div class="flex-1 bg-white p-4 rounded-xl shadow flex flex-col min-h-0">
+                <!-- Vùng cuộn cho Bảng dữ liệu (để không làm cuộn toàn trang) -->
+                <div class="flex-1 overflow-y-auto custom-scroll border rounded-t-lg">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 sticky top-0 shadow-sm">
+                            <tr>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[8%]">Id</th>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[26%]">Tên cảm biến</th>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[18%]">Loại cảm biến</th>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[14%]">Giá trị</th>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[12%]">Đơn vị</th>
+                                <th class="p-3 border-b font-semibold text-gray-600 w-[22%]">Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ds-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Thanh phân trang căn phải dưới bảng -->
+                <div
+                    class="h-12 flex items-center justify-between border rounded-b-lg border-t-0 px-4 bg-gray-50 shrink-0">
+                    <label class="flex items-center gap-2 text-gray-500">
+                        <span>Số dòng/trang</span>
+                        <select id="ds-pagesize"
+                            class="border rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-blue-500">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                        </select>
+                    </label>
+                    <div class="flex items-center">
+                        <span class="text-gray-500 mr-4"><span id="ds-total">0</span> bản ghi</span>
+                        <div class="flex items-center gap-2">
+                            <button id="ds-prev"
+                                class="px-3 py-1 border rounded bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                                disabled>Trước</button>
+                            <span class="px-3 py-1 font-semibold text-blue-600">Trang <span id="ds-page">1</span></span>
+                            <button id="ds-next"
+                                class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100">Sau</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MÀN HÌNH 1.3: ACTION HISTORY ================= -->
+        <div id="tab-actionhistory" class="tab-content flex-col h-full w-full gap-4">
+            <!-- Phần trên: Thời gian + Thiết bị + Hành động + Trạng thái -->
+            <div class="flex items-center gap-3 bg-white px-4 py-3 rounded-xl shadow shrink-0">
+                <i class="fas fa-search text-gray-400"></i>
+                <div class="flex-1 flex flex-col">
+                    <label for="ah-time" class="text-xs text-gray-500 mb-1">Thời gian</label>
+                    <input type="text" id="ah-time" placeholder="Tìm kiếm"
+                        title="Ví dụ: 2026-10-09 hoặc 2026-10-09 14:30"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="flex flex-col w-36">
+                    <label for="ah-device" class="text-xs text-gray-500 mb-1">Thiết bị</label>
+                    <select id="ah-device"
+                        class="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-500">
+                        <option value="">Tất cả</option>
+                        <option value="1">Đèn 1</option>
+                        <option value="2">Đèn 2</option>
+                    </select>
+                </div>
+                <div class="flex flex-col w-36">
+                    <label for="ah-action" class="text-xs text-gray-500 mb-1">Hành động</label>
+                    <select id="ah-action"
+                        class="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-500">
+                        <option value="">Tất cả</option>
+                        <option value="ON">Bật</option>
+                        <option value="OFF">Tắt</option>
+                    </select>
+                </div>
+                <div class="flex flex-col w-40">
+                    <label for="ah-status" class="text-xs text-gray-500 mb-1">Trạng thái</label>
+                    <select id="ah-status"
+                        class="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-500">
+                        <option value="">Tất cả</option>
+                        <option value="success">Thành công</option>
+                        <option value="failed">Thất bại</option>
+                        <option value="timeout">Timeout</option>
+                        <option value="pending">Đang chờ</option>
+                    </select>
+                </div>
+                <button id="ah-search-btn"
+                    class="self-end bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 font-semibold">Tìm
+                    kiếm</button>
+            </div>
+
+            <!-- Phần dưới nội dung: Bảng & Phân trang -->
+            <div class="flex-1 bg-white p-4 rounded-xl shadow flex flex-col min-h-0">
+                <div class="flex-1 overflow-y-auto custom-scroll border rounded-t-lg">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 sticky top-0 shadow-sm">
+                            <tr>
+                                <th class="p-3 border-b font-semibold text-gray-600">ID</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">THIẾT BỊ</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">HÀNH ĐỘNG</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">TRẠNG THÁI</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">THỜI GIAN</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">THỜI GIAN PHẢN HỒI</th>
+                                <th class="p-3 border-b font-semibold text-gray-600">NGƯỜI THỰC HIỆN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ah-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Thanh phân trang căn phải dưới bảng -->
+                <div
+                    class="h-12 flex items-center justify-between border rounded-b-lg border-t-0 px-4 bg-gray-50 shrink-0">
+                    <label class="flex items-center gap-2 text-gray-500">
+                        <span>Số dòng/trang</span>
+                        <select id="ah-pagesize"
+                            class="border rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-blue-500">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                        </select>
+                    </label>
+                    <div class="flex items-center">
+                        <span class="text-gray-500 mr-4"><span id="ah-total">0</span> bản ghi</span>
+                        <div class="flex items-center gap-2">
+                            <button id="ah-prev"
+                                class="px-3 py-1 border rounded bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                                disabled>Trước</button>
+                            <span class="px-3 py-1 font-semibold text-blue-600">Trang <span id="ah-page">1</span></span>
+                            <button id="ah-next"
+                                class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100">Sau</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MÀN HÌNH: PROFILE (thông tin sinh viên, không liên quan đăng nhập) ================= -->
+        <div id="tab-profile" class="tab-content flex-col h-full w-full gap-4">
+            <div class="bg-white rounded-xl shadow p-6 max-w-3xl">
+                <div class="flex items-center gap-5 mb-6">
+                    <div class="w-24 h-24 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-4xl overflow-hidden"
+                        id="pf-avatar">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-gray-800" id="pf-header-name">—</p>
+                        <p class="text-gray-500" id="pf-header-id">—</p>
+                    </div>
+                </div>
+                <table class="w-full text-left border-collapse">
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Họ và tên</td>
+                            <td class="py-3 text-gray-800" id="pf-full_name">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Mã sinh viên</td>
+                            <td class="py-3 text-gray-800" id="pf-username">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Lớp</td>
+                            <td class="py-3 text-gray-800" id="pf-class_name">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Email</td>
+                            <td class="py-3 text-gray-800" id="pf-email">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Số điện thoại</td>
+                            <td class="py-3 text-gray-800" id="pf-phone">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Đề tài</td>
+                            <td class="py-3 text-gray-800" id="pf-project">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">GitHub</td>
+                            <td class="py-3 text-gray-800" id="pf-github">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Postman</td>
+                            <td class="py-3 text-gray-800" id="pf-postman">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Figma</td>
+                            <td class="py-3 text-gray-800" id="pf-figma">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 pr-6 w-48 text-gray-500 font-semibold">Báo cáo (PDF)</td>
+                            <td class="py-3 text-gray-800" id="pf-report_pdf">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MÃ JAVASCRIPT ĐỂ CHUYỂN TAB, VẼ BIỂU ĐỒ VÀ GỌI API THẬT TỪ NODE-RED -->
+    <script>
+        // ================================================================
+        // CẤU HÌNH: đổi lại địa chỉ IP máy chạy Node-RED nếu khác
+        // ================================================================
+        const NODE_RED_URL = "http://localhost:8800";
+        // Mở qua Node-RED (http://<ip>:1880/dashboard.html) -> cùng origin, không cần CORS.
+        // Mở trực tiếp file .html hoặc server khác -> gọi tới NODE_RED_URL.
+        const API_BASE = (location.port === "8800") ? "" : NODE_RED_URL;
+
+        // ĐIỀN THÔNG TIN PROFILE Ở ĐÂY (kết hợp với bảng users trong database)
+        const PROFILE_EXTRA = {
+            full_name: "Triệu Nguyễn Minh Tân",
+            username: "B23DCAT271",
+            email: "",
+            class_name: "D23CQAT01-B",
+            phone: "",
+            project: "IOT - Hệ thống cảm biến giám sát môi trường và điều khiển thiết bị",
+            github: "",
+            postman: "",
+            figma: "",
+            report_pdf: "",
+            avatar: ""        // Link ảnh đại diện (tuỳ chọn)
+        };
+        const DEFAULT_PAGE_SIZE = 10;
+
+        // ================================================================
+        // BỘ DỮ LIỆU MẪU (MOCK DATA) CHO DASHBOARD, DATASENSOR, ACTIONHISTORY
+        // ================================================================
+        const nowMs = Date.now();
+        const fmtIso = (t) => new Date(t).toISOString();
+
+        // 1. Dữ liệu trạng thái ban đầu của Dashboard (khôi phục số liệu thực tế gần nhất từ localStorage, không dùng số ảo 28.5/65/420)
+        const savedLed1 = localStorage.getItem('iot_led1') || 'OFF';
+        const savedLed2 = localStorage.getItem('iot_led2') || 'OFF';
+        const savedTemp = localStorage.getItem('iot_last_temp');
+        const savedHum = localStorage.getItem('iot_last_hum');
+        const savedLight = localStorage.getItem('iot_last_light');
+        const savedChartStr = localStorage.getItem('iot_last_chart');
+        let initialChartData = { 1: [], 2: [], 3: [] };
+        if (savedChartStr) {
+            try { initialChartData = JSON.parse(savedChartStr); } catch(e) {}
+        }
+        const mockDashboardState = {
+            temp: savedTemp ? parseFloat(savedTemp) : null,
+            hum: savedHum ? parseFloat(savedHum) : null,
+            light: savedLight ? parseInt(savedLight) : null,
+            led1: savedLed1,
+            led2: savedLed2
+        };
+
+        // 2. Dữ liệu biểu đồ 10 điểm đo gần nhất (Chronological order)
+        const mockChartData = { 1: [], 2: [], 3: [] };
+        for (let i = 9; i >= 0; i--) {
+            const timeStep = nowMs - i * 120 * 1000; // mỗi điểm cách nhau 2 phút
+            const isoTime = fmtIso(timeStep);
+            const tempVal = Number((28.2 + Math.sin(i * 0.7) * 1.4).toFixed(1));
+            const humVal = Number((65.0 + Math.cos(i * 0.6) * 3.8).toFixed(1));
+            const lightVal = Math.round(420 + Math.sin(i * 0.8) * 55);
+
+            mockChartData[1].push({ t: isoTime, v: tempVal });
+            mockChartData[2].push({ t: isoTime, v: humVal });
+            mockChartData[3].push({ t: isoTime, v: lightVal });
+        }
+
+        // 3. Dữ liệu cảm biến mẫu (45 bản ghi: 15 mốc thời gian × 3 cảm biến)
+        const mockSensors = [];
+        let curDataId = 1045;
+        for (let i = 0; i < 15; i++) {
+            const timeStep = nowMs - i * 120 * 1000;
+            const isoTime = fmtIso(timeStep);
+            const tempVal = Number((28.2 + Math.sin(i * 0.7) * 1.4).toFixed(1));
+            const humVal = Number((65.0 + Math.cos(i * 0.6) * 3.8).toFixed(1));
+            const lightVal = Math.round(420 + Math.sin(i * 0.8) * 55);
+
+            // Cảm biến Ánh sáng (LDR)
+            mockSensors.push({
+                data_id: curDataId--,
+                sensor_id: 3,
+                sensor_name: 'Quang trở LDR',
+                sensor_type: 'light',
+                sensor_type_label: 'Ánh sáng',
+                value: lightVal,
+                unit: 'lux',
+                recorded_at: isoTime
+            });
+
+            // Cảm biến Độ ẩm (DHT11)
+            mockSensors.push({
+                data_id: curDataId--,
+                sensor_id: 2,
+                sensor_name: 'Cảm biến Độ ẩm DHT11',
+                sensor_type: 'humidity',
+                sensor_type_label: 'Độ ẩm',
+                value: humVal,
+                unit: '%',
+                recorded_at: isoTime
+            });
+
+            // Cảm biến Nhiệt độ (DHT11)
+            mockSensors.push({
+                data_id: curDataId--,
+                sensor_id: 1,
+                sensor_name: 'Cảm biến Nhiệt độ DHT11',
+                sensor_type: 'temperature',
+                sensor_type_label: 'Nhiệt độ',
+                value: tempVal,
+                unit: '°C',
+                recorded_at: isoTime
+            });
+        }
+
+        // 4. Dữ liệu lịch sử thao tác mẫu (20 bản ghi phong phú)
+        const mockActionDefs = [
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:ON', st: 'success', ms: 85, op: 'Người dùng', minAgo: 2 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:OFF', st: 'success', ms: 92, op: 'Người dùng', minAgo: 8 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:ON', st: 'success', ms: 110, op: 'Người dùng', minAgo: 16 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:OFF', st: 'success', ms: 125, op: 'MQTT', minAgo: 24 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:ON', st: 'success', ms: 88, op: 'Người dùng', minAgo: 35 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:OFF', st: 'timeout', ms: 5000, op: 'Người dùng', minAgo: 48 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:ON', st: 'success', ms: 96, op: 'MQTT', minAgo: 60 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:OFF', st: 'success', ms: 105, op: 'Người dùng', minAgo: 75 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:ON', st: 'success', ms: 140, op: 'Người dùng', minAgo: 90 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:ON', st: 'failed', ms: null, op: 'MQTT', minAgo: 105 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:OFF', st: 'success', ms: 78, op: 'Người dùng', minAgo: 120 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:OFF', st: 'success', ms: 90, op: 'Người dùng', minAgo: 135 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:ON', st: 'success', ms: 115, op: 'Người dùng', minAgo: 150 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:ON', st: 'success', ms: 102, op: 'MQTT', minAgo: 170 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:OFF', st: 'success', ms: 84, op: 'Người dùng', minAgo: 190 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:OFF', st: 'success', ms: 95, op: 'Người dùng', minAgo: 210 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:ON', st: 'success', ms: 130, op: 'Người dùng', minAgo: 230 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:ON', st: 'success', ms: 112, op: 'MQTT', minAgo: 250 },
+            { dev: 'led1', devName: 'Đèn 1', act: 'led1:OFF', st: 'success', ms: 99, op: 'Người dùng', minAgo: 270 },
+            { dev: 'led2', devName: 'Đèn 2', act: 'led2:OFF', st: 'success', ms: 89, op: 'Người dùng', minAgo: 300 }
+        ];
+
+        const mockActions = mockActionDefs.map((item, idx) => {
+            const t = nowMs - item.minAgo * 60 * 1000;
+            return {
+                action_id: 120 - idx,
+                device_id: item.dev === 'led1' ? 1 : 2,
+                device_name: item.devName,
+                action: item.act,
+                status: item.st,
+                time: fmtIso(t),
+                time_response: item.ms ? fmtIso(t + item.ms) : null,
+                response_ms: item.ms,
+                operator: item.op
+            };
+        });
+
+        // ================================================================
+        // TỐI ƯU HÓA TỐC ĐỘ: NHẬN DIỆN MÔI TRƯỜNG & KHÔNG CHỜ NETWORK TIMEOUT
+        // ================================================================
+        const isFileProtocol = (location.protocol === "file:");
+        let isApiOnline = isFileProtocol ? false : null; // Mở dạng file:// -> luôn dùng mock, 0ms latency
+
+
+        // ================================================================
+        // HỆ THỐNG THÔNG BÁO TOAST & AUTHENTICATION
+        // ================================================================
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const icons = {
+                success: 'fa-check-circle text-green-500',
+                error: 'fa-times-circle text-red-500',
+                warning: 'fa-exclamation-triangle text-amber-500',
+                info: 'fa-info-circle text-blue-500'
+            };
+            const bgBorders = {
+                success: 'bg-white border-green-200 text-gray-800 shadow-green-500/10',
+                error: 'bg-white border-red-200 text-gray-800 shadow-red-500/10',
+                warning: 'bg-white border-amber-200 text-gray-800 shadow-amber-500/10',
+                info: 'bg-white border-blue-200 text-gray-800 shadow-blue-500/10'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-lg border ${bgBorders[type] || bgBorders.info} text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type] || icons.info} text-sm shrink-0"></i>
+                <span class="flex-1">${escHtml(msg)}</span>
+                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-1.5"><i class="fas fa-times text-xs"></i></button>
+            `;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        let currentAuth = (function() {
+            try {
+                const sUser = localStorage.getItem('iot_user');
+                const sToken = localStorage.getItem('iot_token');
+                if (sUser && sToken) {
+                    return { token: sToken, user: JSON.parse(sUser) };
+                }
+            } catch(e) {}
+            return {
+                token: '',
+                user: { user_id: 2, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+            };
+        })();
+
+        function getAuthToken() {
+            return currentAuth ? currentAuth.token : '';
+        }
+
+        async function initAuth() {
+            try {
+                const stored = localStorage.getItem('iot_user');
+                const token = localStorage.getItem('iot_token');
+                if (stored && token) {
+                    currentAuth = { token, user: JSON.parse(stored) };
+                    updateUserUI();
+                    try {
+                        const res = await fetch(API_BASE + '/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.ok && data.user) {
+                                currentAuth.user = data.user;
+                                localStorage.setItem('iot_user', JSON.stringify(data.user));
+                                updateUserUI();
+                            }
+                        } else if (res.status === 401) {
+                            // Token hết hạn -> xóa token và chuyển về viewer, KHÔNG tự ép đăng nhập admin
+                            localStorage.removeItem('iot_token');
+                            localStorage.removeItem('iot_user');
+                            currentAuth = {
+                                token: '',
+                                user: { user_id: 2, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+                            };
+                            updateUserUI();
+                        }
+                    } catch (e) { }
+                    return;
+                }
+            } catch (e) { }
+
+            // Mặc định khi chưa đăng nhập là viewer
+            currentAuth = {
+                token: '',
+                user: { user_id: 2, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+            };
+            updateUserUI();
+        }
+
+        function showLoginModal() {
+            const modal = document.getElementById('login-modal');
+            modal.classList.remove('hidden');
+            const errEl = document.getElementById('login-error');
+            if (errEl) errEl.classList.add('hidden');
+            const uInput = document.getElementById('login-username');
+            const pInput = document.getElementById('login-password');
+            if (uInput) {
+                uInput.value = '';
+                uInput.focus();
+            }
+            if (pInput) {
+                pInput.value = '';
+            }
+        }
+
+        function hideLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            const errEl = document.getElementById('login-error');
+            if (errEl) errEl.classList.add('hidden');
+        }
+
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('login-password');
+            const eyeIcon = document.getElementById('login-pwd-eye');
+            if (!pwdInput || !eyeIcon) return;
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeIcon.className = 'fas fa-eye-slash text-sm text-blue-600';
+            } else {
+                pwdInput.type = 'password';
+                eyeIcon.className = 'fas fa-eye text-sm text-gray-400';
+            }
+        }
+
+        async function submitLogin() {
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+            const errEl = document.getElementById('login-error');
+            const submitBtn = document.getElementById('login-submit-btn');
+
+            if (!u || !p) {
+                if (errEl) {
+                    errEl.textContent = 'Vui lòng điền đủ tên đăng nhập và mật khẩu!';
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Đang xác thực...</span>';
+            }
+            if (errEl) errEl.classList.add('hidden');
+
+            try {
+                const resp = await fetch(API_BASE + '/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                const data = await resp.json().catch(() => ({}));
+
+                if (resp.ok && data.ok && data.token) {
+                    localStorage.setItem('iot_token', data.token);
+                    localStorage.setItem('iot_user', JSON.stringify(data.user));
+                    currentAuth = { token: data.token, user: data.user };
+                    hideLoginModal();
+                    updateUserUI();
+                    showToast(`Đăng nhập thành công: ${data.user.full_name} (${data.user.role.toUpperCase()})`, 'success');
+                } else {
+                    if (errEl) {
+                        errEl.textContent = data.error || 'Tên đăng nhập hoặc mật khẩu không chính xác!';
+                        errEl.classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                if ((u === 'admin' && p === 'admin123') || (u === 'user' && p === 'user123') || (u === 'viewer' && p === 'viewer123')) {
+                    const role = u;
+                    const mockUser = {
+                        user_id: role === 'admin' ? 1 : (role === 'user' ? 3 : 2),
+                        username: role,
+                        full_name: role === 'admin' ? 'Quản trị viên (Offline)' : (role === 'user' ? 'Người dùng (Offline)' : 'Người xem (Offline)'),
+                        email: `${role}@iot.local`,
+                        role: role
+                    };
+                    const mockToken = `demo_${role}_token`;
+                    localStorage.setItem('iot_token', mockToken);
+                    localStorage.setItem('iot_user', JSON.stringify(mockUser));
+                    currentAuth = { token: mockToken, user: mockUser };
+                    hideLoginModal();
+                    updateUserUI();
+                    showToast(`Đăng nhập thành công: ${mockUser.full_name}`, 'info');
+                } else {
+                    if (errEl) {
+                        errEl.textContent = 'Không thể kết nối tới máy chủ backend Node-RED!';
+                        errEl.classList.remove('hidden');
+                    }
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Đăng nhập</span>';
+                }
+            }
+        }
+
+        async function logout() {
+            const token = getAuthToken();
+            if (token) {
+                try {
+                    await fetch(API_BASE + '/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({ token })
+                    });
+                } catch (e) { }
+            }
+            localStorage.removeItem('iot_token');
+            localStorage.removeItem('iot_user');
+
+            currentAuth = {
+                token: '',
+                user: { user_id: 2, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+            };
+            updateUserUI();
+            showToast('Đã đăng xuất khỏi hệ thống', 'info');
+            showLoginModal();
+        }
+
+        function handleAuthAction() {
+            if (currentAuth && currentAuth.token) {
+                logout();
+            } else {
+                showLoginModal();
+            }
+        }
+
+        function updateUserUI() {
+            if (!currentAuth || !currentAuth.user) return;
+            const u = currentAuth.user;
+            const isLoggedIn = !!currentAuth.token;
+            const role = u.role || 'viewer';
+            const canControl = (role === 'admin' || role === 'user') && isLoggedIn;
+            const isViewer = (role === 'viewer') || !isLoggedIn;
+
+            const sName = document.getElementById('sidebar-user-name');
+            if (sName) sName.textContent = u.full_name || u.username;
+            const sBadge = document.getElementById('sidebar-role-badge');
+            if (sBadge) {
+                sBadge.textContent = role.toUpperCase();
+                if (role === 'admin') {
+                    sBadge.className = 'inline-block text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-red-900/60 text-red-300 border border-red-700/50';
+                } else if (role === 'user') {
+                    sBadge.className = 'inline-block text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-blue-900/60 text-blue-300 border border-blue-700/50';
+                } else {
+                    sBadge.className = 'inline-block text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-slate-700 text-slate-300 border border-slate-600';
+                }
+            }
+
+            const sAvatar = document.getElementById('sidebar-avatar');
+            if (sAvatar) {
+                if (role === 'admin') {
+                    sAvatar.className = 'w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow';
+                    sAvatar.innerHTML = '<i class="fas fa-user-shield"></i>';
+                } else if (role === 'user') {
+                    sAvatar.className = 'w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow';
+                    sAvatar.innerHTML = '<i class="fas fa-user-check"></i>';
+                } else {
+                    sAvatar.className = 'w-8 h-8 rounded-full bg-slate-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow';
+                    sAvatar.innerHTML = '<i class="fas fa-user"></i>';
+                }
+            }
+
+            const authBtn = document.getElementById('btn-auth-action');
+            const authText = document.getElementById('auth-action-text');
+            const authIcon = document.getElementById('auth-action-icon');
+            if (authBtn && authText && authIcon) {
+                if (isLoggedIn) {
+                    authBtn.className = 'w-full py-1.5 px-2 text-xs bg-red-950/40 hover:bg-red-800 text-red-300 hover:text-white rounded-lg transition flex items-center justify-center gap-1.5 font-medium border border-red-800/40';
+                    authBtn.title = 'Đăng xuất khỏi hệ thống';
+                    authText.textContent = 'Đăng xuất';
+                    authIcon.className = 'fas fa-sign-out-alt text-xs';
+                } else {
+                    authBtn.className = 'w-full py-1.5 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center justify-center gap-1.5 font-medium shadow';
+                    authBtn.title = 'Mở hộp thoại đăng nhập';
+                    authText.textContent = 'Đăng nhập';
+                    authIcon.className = 'fas fa-sign-in-alt text-xs';
+                }
+            }
+
+            // Đồng bộ trạng thái khóa công tắc nếu không có quyền điều khiển (cả admin và user đều được bật/tắt)
+            LEDS.forEach(id => {
+                const el = document.getElementById(id + '-toggle');
+                if (el) {
+                    el.disabled = !canControl;
+                }
+                const label = el ? el.closest('label') : null;
+                if (label) {
+                    if (!canControl) {
+                        label.classList.add('opacity-60', 'cursor-not-allowed');
+                    } else {
+                        label.classList.remove('opacity-60', 'cursor-not-allowed');
+                    }
+                }
+            });
+
+            // Phân quyền cho Viewer: không thể xem datasensor, actionhistory, profile
+            const btnDs = document.getElementById('btn-datasensor');
+            const btnAct = document.getElementById('btn-actionhistory');
+            const btnProf = document.getElementById('btn-profile');
+            if (btnDs && btnAct && btnProf) {
+                if (isViewer) {
+                    btnDs.classList.add('opacity-40');
+                    btnDs.title = 'Tài khoản Người xem không có quyền truy cập Data sensor';
+                    btnAct.classList.add('opacity-40');
+                    btnAct.title = 'Tài khoản Người xem không có quyền truy cập Action history';
+                    btnProf.classList.add('opacity-40');
+                    btnProf.title = 'Tài khoản Người xem không có quyền truy cập Profile';
+                    const curActive = document.querySelector('.tab-content.active');
+                    if (curActive && (curActive.id === 'tab-datasensor' || curActive.id === 'tab-actionhistory' || curActive.id === 'tab-profile')) {
+                        switchTab('dashboard');
+                    }
+                } else {
+                    btnDs.classList.remove('opacity-40');
+                    btnDs.title = '';
+                    btnAct.classList.remove('opacity-40');
+                    btnAct.title = '';
+                    btnProf.classList.remove('opacity-40');
+                    btnProf.title = '';
+                }
+            }
+        }
+
+        async function fastFetchJson(endpoint, options = {}, timeoutMs = 3000) {
+            if (isFileProtocol) return null;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const token = getAuthToken();
+                const headers = Object.assign({}, options.headers || {});
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+                const res = await fetch(API_BASE + endpoint, { ...options, headers, signal: controller.signal });
+                clearTimeout(timer);
+                if (res.ok) {
+                    isApiOnline = true;
+                    return await res.json();
+                }
+                return null;
+            } catch (e) {
+                clearTimeout(timer);
+                return null;
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Chuyển tab (chuyển đổi tức thì 0ms)
+        // ---------------------------------------------------------------
+        function switchTab(tabId) {
+            const u = (currentAuth && currentAuth.user) || { role: 'viewer' };
+            const isViewer = (u.role === 'viewer') || !currentAuth.token;
+            if (isViewer && (tabId === 'datasensor' || tabId === 'actionhistory' || tabId === 'profile')) {
+                showToast('Tài khoản Người xem (Viewer) không có quyền truy cập trang này!', 'warning');
+                return;
+            }
+
+            const targetTab = document.getElementById('tab-' + tabId);
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (!targetTab || !activeBtn) return;
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-white', 'bg-slate-700');
+                el.classList.add('border-transparent', 'text-slate-300');
+            });
+
+            targetTab.classList.add('active');
+            activeBtn.classList.remove('border-transparent', 'text-slate-300');
+            activeBtn.classList.add('border-blue-500', 'text-white', 'bg-slate-700');
+
+            // Lưu tab hiện tại vào localStorage và URL hash để khi F5 không bị quay lại dashboard
+            localStorage.setItem('iot_active_tab', tabId);
+            if (window.location.hash !== '#' + tabId) {
+                try { history.replaceState(null, '', '#' + tabId); } catch(e) {}
+            }
+
+            if (tabId === 'datasensor') { dsState.page = 1; loadSensors(); }
+            if (tabId === 'actionhistory') { ahState.page = 1; loadActions(); }
+            if (tabId === 'profile') { loadProfile(); }
+        }
+
+        // ---------------------------------------------------------------
+        // Khởi tạo Biểu đồ Chart.js (Khởi tạo sẵn dữ liệu mẫu ngay lập tức)
+        // ---------------------------------------------------------------
+        function formatTime(iso) {
+            const d = new Date(iso);
+            return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+        }
+
+        function escHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function fmtDateTime(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            const p = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        }
+
+        const ctx = document.getElementById('realtimeChart').getContext('2d');
+        const chartInit = (initialChartData && initialChartData[1] && initialChartData[1].length) ? initialChartData : { 1: [], 2: [], 3: [] };
+        const realtimeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: (chartInit[1] || []).map(p => formatTime(p.t)),
+                datasets: [
+                    {
+                        label: 'Nhiệt độ (°C)',
+                        data: (chartInit[1] || []).map(p => p.v),
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Độ ẩm (%)',
+                        data: (chartInit[2] || []).map(p => p.v),
+                        borderColor: '#3b82f6',
+                        backgroundColor: '#3b82f6',
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Ánh sáng (lux / 10)',
+                        data: (chartInit[3] || []).map(p => p.v / 10),
+                        borderColor: '#eab308',
+                        backgroundColor: '#eab308',
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'rect',
+                            boxWidth: 8,
+                            padding: 15,
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.dataset.label || '';
+                                const val = context.parsed.y;
+                                if (context.datasetIndex === 0) return ` ${label}: ${val} °C`;
+                                if (context.datasetIndex === 1) return ` ${label}: ${val} %`;
+                                if (context.datasetIndex === 2) return ` ${label}: ${val} (Giá trị thật: ${Math.round(val * 10)} lux)`;
+                                return ` ${label}: ${val}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    // Trục Y bên trái: Thang đo chuẩn 0 - 100
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 10,
+                            font: { size: 11, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: {
+                            color: '#f1f5f9'
+                        },
+                        title: {
+                            display: true,
+                            font: { size: 11, weight: '600' },
+                            color: '#94a3b8'
+                        }
+                    },
+                    // Trục Y bên phải: Đồng bộ cùng giá trị 0 - 100 như trục trái
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 10,
+                            font: { size: 11, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: {
+                            drawOnChartArea: false // Không vẽ đè lưới để đồ thị sạch sẽ, thoáng mắt
+                        },
+                        title: {
+                            display: true,
+                            font: { size: 11, weight: '600' },
+                            color: '#94a3b8'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#64748b'
+                        }
+                    }
+                }
+            }
+        });
+
+        // ---------------------------------------------------------------
+        // TAB 1: DASHBOARD — số liệu realtime + biểu đồ + công tắc LED
+        // ---------------------------------------------------------------
+        const LEDS = ['led1', 'led2'];
+        const loadingLeds = {};
+
+        function renderLed(id, isOn) {
+            if (loadingLeds[id]) return; // Đang trong 1s loading thì không ghi đè
+            const toggle = document.getElementById(id + '-toggle');
+            if (toggle) {
+                toggle.checked = isOn;
+                toggle.disabled = false;
+            }
+            const st = document.getElementById(id + '-status');
+            if (st) {
+                st.textContent = isOn ? 'BẬT' : 'TẮT';
+                st.className = 'text-xs font-bold whitespace-nowrap ' + (isOn ? 'text-green-600' : 'text-gray-500');
+            }
+            const label = toggle ? toggle.closest('label') : null;
+            if (label) {
+                label.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        let lastNodeMcuState = true;
+        function updateNodeMcuConnectionState(isConnected) {
+            const banner = document.getElementById('nodemcu-disconnect-alert');
+            if (!banner) return;
+            if (!isConnected) {
+                banner.classList.remove('hidden');
+                if (lastNodeMcuState === true) {
+                    showToast('Cảnh báo: Mất kết nối với thiết bị NodeMCU!', 'error');
+                }
+            } else {
+                banner.classList.add('hidden');
+            }
+            lastNodeMcuState = isConnected;
+        }
+
+        function renderDashboardUI(d) {
+            // Kiểm tra trạng thái kết nối NodeMCU
+            let isConnected = true;
+            if (d) {
+                if (d.nodemcu_online === false) {
+                    isConnected = false;
+                } else if (d.chart && d.chart[1] && d.chart[1].length > 0) {
+                    const points = d.chart[1];
+                    const latestPt = points[points.length - 1];
+                    if (latestPt && latestPt.t) {
+                        const lastTime = new Date(latestPt.t).getTime();
+                        if (!isNaN(lastTime) && (Date.now() - lastTime > 10000)) {
+                            isConnected = false;
+                        }
+                    }
+                }
+            }
+            updateNodeMcuConnectionState(isConnected);
+
+            document.getElementById('card-temp').textContent = (d.temp ?? '--');
+            document.getElementById('card-hum').textContent = (d.hum ?? '--');
+            document.getElementById('card-light').textContent = (d.light ?? '--');
+
+            LEDS.forEach(id => {
+                renderLed(id, d[id] === 'ON');
+            });
+
+            if (d.chart && d.chart[1] && d.chart[1].length) {
+                realtimeChart.data.labels = d.chart[1].map(p => formatTime(p.t));
+                realtimeChart.data.datasets[0].data = d.chart[1].map(p => p.v);
+                realtimeChart.data.datasets[1].data = (d.chart[2] || []).map(p => p.v);
+                realtimeChart.data.datasets[2].data = (d.chart[3] || []).map(p => p.v / 10);
+                realtimeChart.update();
+            }
+        }
+
+        // Cập nhật dao động nhẹ số liệu mỗi chu kỳ
+        function updateMockSensorTick() {
+            const tempDelta = (Math.random() - 0.5) * 0.4;
+            const humDelta = (Math.random() - 0.5) * 0.8;
+            const lightDelta = Math.round((Math.random() - 0.5) * 12);
+
+            mockDashboardState.temp = Number((Math.min(32, Math.max(26, mockDashboardState.temp + tempDelta))).toFixed(1));
+            mockDashboardState.hum = Number((Math.min(80, Math.max(50, mockDashboardState.hum + humDelta))).toFixed(1));
+            mockDashboardState.light = Math.min(600, Math.max(250, mockDashboardState.light + lightDelta));
+
+            const curIso = new Date().toISOString();
+            mockChartData[1].push({ t: curIso, v: mockDashboardState.temp });
+            mockChartData[2].push({ t: curIso, v: mockDashboardState.hum });
+            mockChartData[3].push({ t: curIso, v: mockDashboardState.light });
+
+            if (mockChartData[1].length > 10) {
+                mockChartData[1].shift();
+                mockChartData[2].shift();
+                mockChartData[3].shift();
+            }
+
+            const newSid = mockSensors.length ? Math.max(...mockSensors.map(s => s.data_id || 0)) + 1 : 1000;
+            mockSensors.unshift({
+                data_id: newSid + 2,
+                sensor_id: 3,
+                sensor_name: 'Quang trở LDR',
+                sensor_type: 'light',
+                sensor_type_label: 'Ánh sáng',
+                value: mockDashboardState.light,
+                unit: 'lux',
+                recorded_at: curIso
+            });
+            mockSensors.unshift({
+                data_id: newSid + 1,
+                sensor_id: 2,
+                sensor_name: 'Cảm biến Độ ẩm DHT11',
+                sensor_type: 'humidity',
+                sensor_type_label: 'Độ ẩm',
+                value: mockDashboardState.hum,
+                unit: '%',
+                recorded_at: curIso
+            });
+            mockSensors.unshift({
+                data_id: newSid,
+                sensor_id: 1,
+                sensor_name: 'Cảm biến Nhiệt độ DHT11',
+                sensor_type: 'temperature',
+                sensor_type_label: 'Nhiệt độ',
+                value: mockDashboardState.temp,
+                unit: '°C',
+                recorded_at: curIso
+            });
+        }
+
+        async function loadDashboard() {
+            // Kiểm tra server nếu không phải file://
+            let serverData = null;
+            if (!isFileProtocol) {
+                serverData = await fastFetchJson("/api/dashboard", {}, 3000);
+            }
+
+            if (serverData && serverData.temp != null) {
+                if (serverData.led1 && !loadingLeds['led1']) {
+                    mockDashboardState.led1 = serverData.led1;
+                    localStorage.setItem('iot_led1', serverData.led1);
+                }
+                if (serverData.led2 && !loadingLeds['led2']) {
+                    mockDashboardState.led2 = serverData.led2;
+                    localStorage.setItem('iot_led2', serverData.led2);
+                }
+                mockDashboardState.temp = serverData.temp;
+                mockDashboardState.hum = serverData.hum;
+                mockDashboardState.light = serverData.light;
+                localStorage.setItem('iot_last_temp', String(serverData.temp));
+                localStorage.setItem('iot_last_hum', String(serverData.hum));
+                localStorage.setItem('iot_last_light', String(serverData.light));
+                if (serverData.chart) {
+                    localStorage.setItem('iot_last_chart', JSON.stringify(serverData.chart));
+                }
+                renderDashboardUI(serverData);
+            } else if (isFileProtocol) {
+                updateMockSensorTick();
+                renderDashboardUI({
+                    temp: mockDashboardState.temp,
+                    hum: mockDashboardState.hum,
+                    light: mockDashboardState.light,
+                    led1: mockDashboardState.led1,
+                    led2: mockDashboardState.led2,
+                    chart: mockChartData
+                });
+            }
+        }
+
+        // BẬT / TẮT ĐÈN: LOADING 1S RỒI MỚI CHUYỂN TRẠNG THÁI
+        LEDS.forEach(id => {
+            const toggleEl = document.getElementById(id + '-toggle');
+            if (!toggleEl) return;
+            toggleEl.addEventListener('change', function (e) {
+                if (loadingLeds[id]) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const canControl = currentAuth && currentAuth.user && (currentAuth.user.role === 'admin' || currentAuth.user.role === 'user') && !!currentAuth.token;
+                if (!canControl) {
+                    this.checked = !this.checked;
+                    showToast('Bạn không có quyền điều khiển thiết bị', 'warning');
+                    return;
+                }
+
+                const wantOn = this.checked;
+
+                // 1. GIỮ LẠI VỊ TRÍ CŨ CỦA CÔNG TẮC TRONG THỜI GIAN LOADING 1 GIÂY
+                this.checked = !wantOn;
+                this.disabled = true;
+                loadingLeds[id] = true;
+
+                const labelEl = this.closest('label');
+                if (labelEl) labelEl.classList.add('opacity-50', 'pointer-events-none');
+
+                const stEl = document.getElementById(id + '-status');
+                if (stEl) {
+                    stEl.innerHTML = `<i class="fas fa-spinner fa-spin text-blue-500 mr-1"></i>Đang xử lý...`;
+                    stEl.className = 'text-xs font-semibold whitespace-nowrap text-blue-600 flex items-center';
+                }
+
+                // 2. GỬI LỆNH NGẦM TRONG BACKGROUND (KHÔNG DÙNG await ĐỂ KHÔNG CHẶN UI)
+                if (!isFileProtocol) {
+                    fastFetchJson("/api/control", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() },
+                        body: JSON.stringify({ device: id, action: wantOn ? 'ON' : 'OFF', token: getAuthToken() })
+                    }, 3000).catch(() => { });
+                }
+
+                // 3. SAU ĐÚNG 1 GIÂY (1000ms) MỚI CHÍNH THỨC CHUYỂN TRẠNG THÁI SANG BẬT/TẮT
+                setTimeout(() => {
+                    delete loadingLeds[id];
+
+                    // Cập nhật trạng thái và chuyển gạt công tắc sang vị trí mới
+                    mockDashboardState[id] = wantOn ? 'ON' : 'OFF';
+                    localStorage.setItem('iot_' + id, wantOn ? 'ON' : 'OFF');
+                    renderLed(id, wantOn);
+
+                    // Ghi vào lịch sử thao tác với độ trễ phản hồi ~1000ms
+                    const newActionId = mockActions.length ? Math.max(...mockActions.map(a => a.action_id || 0)) + 1 : 1;
+                    const nowT = Date.now();
+                    const delayMs = 1000 + Math.floor(Math.random() * 30);
+                    mockActions.unshift({
+                        action_id: newActionId,
+                        device_id: (id === 'led1') ? 1 : 2,
+                        device_name: (id === 'led1') ? 'Đèn 1' : 'Đèn 2',
+                        action: `${id}:${wantOn ? 'ON' : 'OFF'}`,
+                        status: 'success',
+                        time: fmtIso(nowT - delayMs),
+                        time_response: fmtIso(nowT),
+                        response_ms: delayMs,
+                        operator: PROFILE_EXTRA.full_name || 'Người dùng'
+                    });
+
+                    // Cập nhật bảng Action history nếu đang mở tab đó
+                    if (document.getElementById('tab-actionhistory').classList.contains('active')) {
+                        loadActions();
+                    }
+                }, 1000);
+            });
+        });
+
+        // ---------------------------------------------------------------
+        // TAB 2: DATA SENSOR — tìm kiếm, lọc theo loại cảm biến & thời gian, phân trang
+        // ---------------------------------------------------------------
+        const dsState = { page: 1, search: '', type: '', pageSize: DEFAULT_PAGE_SIZE };
+
+        function filterAndPaginateSensors(page, pageSize, search, type) {
+            let filtered = mockSensors.slice();
+            if (type === 'temperature' || type === 'humidity' || type === 'light') {
+                filtered = filtered.filter(r => r.sensor_type === type);
+            }
+            if (search) {
+                const s = search.toLowerCase().trim();
+                if (type === 'time') {
+                    filtered = filtered.filter(r => fmtDateTime(r.recorded_at).toLowerCase().includes(s));
+                } else {
+                    filtered = filtered.filter(r =>
+                        String(r.data_id).includes(s) ||
+                        (r.sensor_name || '').toLowerCase().includes(s) ||
+                        ((r.sensor_type_label || '') + ' ' + (r.sensor_type || '')).toLowerCase().includes(s) ||
+                        String(r.value).includes(s) ||
+                        (r.unit || '').toLowerCase().includes(s) ||
+                        fmtDateTime(r.recorded_at).toLowerCase().includes(s)
+                    );
+                }
+            }
+            const total = filtered.length;
+            const offset = (page - 1) * pageSize;
+            const rows = filtered.slice(offset, offset + pageSize);
+            return { rows, total, page, pageSize };
+        }
+
+        function renderSensorsUI(d) {
+            const tbody = document.getElementById('ds-tbody');
+            if (!d.rows || d.rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">Không tìm thấy bản ghi nào</td></tr>`;
+            } else {
+                tbody.innerHTML = d.rows.map(r => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 border-b">${r.data_id}</td>
+                        <td class="p-3 border-b font-medium">${r.sensor_name}</td>
+                        <td class="p-3 border-b">${r.sensor_type_label || r.sensor_type || ''}</td>
+                        <td class="p-3 border-b font-semibold text-blue-600">${parseFloat(r.value)}</td>
+                        <td class="p-3 border-b">${r.unit || ''}</td>
+                        <td class="p-3 border-b text-gray-500">${fmtDateTime(r.recorded_at)}</td>
+                    </tr>`).join('');
+            }
+            document.getElementById('ds-total').textContent = d.total;
+            document.getElementById('ds-page').textContent = d.page;
+            document.getElementById('ds-prev').disabled = d.page <= 1;
+            document.getElementById('ds-next').disabled = (d.page * d.pageSize) >= d.total;
+        }
+
+        async function loadSensors() {
+            // 1. HIỂN THỊ NGAY TỨC THÌ TỪ DỮ LIỆU CỤC BỘ (0ms DELAY)
+            const localData = filterAndPaginateSensors(dsState.page, dsState.pageSize, dsState.search, dsState.type);
+            renderSensorsUI(localData);
+
+            // 2. NẾU CÓ SERVER, ĐỒNG BỘ NỀN NHẸ NHÀNG
+            if (!isFileProtocol) {
+                const paramObj = {
+                    page: dsState.page,
+                    pageSize: dsState.pageSize,
+                    search: dsState.search
+                };
+                if (dsState.type === 'time') {
+                    paramObj.field = 'time';
+                } else if (dsState.type) {
+                    paramObj.type = dsState.type;
+                    paramObj.field = 'all';
+                } else {
+                    paramObj.field = 'all';
+                }
+                const params = new URLSearchParams(paramObj);
+                const d = await fastFetchJson("/api/sensors?" + params.toString(), {}, 3000);
+                if (d && d.rows) {
+                    renderSensorsUI(d);
+                }
+            }
+        }
+
+        function applyDsSearch() {
+            dsState.search = document.getElementById('ds-search').value.trim();
+            dsState.type = document.getElementById('ds-type').value;
+            dsState.page = 1;
+            loadSensors();
+        }
+        document.getElementById('ds-search-btn').addEventListener('click', applyDsSearch);
+        document.getElementById('ds-search').addEventListener('keydown', e => { if (e.key === 'Enter') applyDsSearch(); });
+        document.getElementById('ds-type').addEventListener('change', function () {
+            const searchInput = document.getElementById('ds-search');
+            if (this.value === 'time') {
+                searchInput.placeholder = 'Nhập thời gian cần tìm (vd: 2026-10-13 hoặc 17:15)...';
+            } else {
+                searchInput.placeholder = 'Nhập giá trị cần tìm...';
+            }
+            applyDsSearch();
+        });
+        document.getElementById('ds-pagesize').addEventListener('change', function () {
+            dsState.pageSize = parseInt(this.value, 10); dsState.page = 1; loadSensors();
+        });
+        document.getElementById('ds-prev').addEventListener('click', () => { if (dsState.page > 1) { dsState.page--; loadSensors(); } });
+        document.getElementById('ds-next').addEventListener('click', () => { dsState.page++; loadSensors(); });
+
+        // ---------------------------------------------------------------
+        // TAB 3: ACTION HISTORY — tìm theo thời gian + lọc thiết bị/hành động/trạng thái
+        // ---------------------------------------------------------------
+        const ahState = { page: 1, time: '', device: '', action: '', status: '', pageSize: DEFAULT_PAGE_SIZE };
+
+        const statusBadge = {
+            success: '<span class="inline-flex items-center text-green-700 bg-green-50 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-check-circle text-green-500 mr-1"></i>Thành công</span>',
+            failed: '<span class="inline-flex items-center text-red-700 bg-red-50 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-times-circle text-red-500 mr-1"></i>Thất bại</span>',
+            timeout: '<span class="inline-flex items-center text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-exclamation-circle text-amber-500 mr-1"></i>Timeout</span>',
+            pending: '<span class="inline-flex items-center text-gray-700 bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold"><i class="fas fa-clock text-gray-400 mr-1"></i>Đang chờ</span>'
+        };
+
+        function actionLabel(action) {
+            const m = /^(led\d):(ON|OFF)$/.exec(action || '');
+            if (!m) return action;
+            const name = m[1].toUpperCase();
+            const isOn = m[2] === 'ON';
+            const cls = isOn ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700';
+            return `<span class="${cls} px-2 py-1 rounded text-xs font-bold">${isOn ? 'BẬT' : 'TẮT'} ${name}</span>`;
+        }
+
+        function filterAndPaginateActions(page, pageSize, time, device, action, status) {
+            let filtered = mockActions.slice();
+            if (time) {
+                const s = time.toLowerCase();
+                filtered = filtered.filter(r => fmtDateTime(r.time).toLowerCase().includes(s));
+            }
+            if (device) {
+                filtered = filtered.filter(r => String(r.device_id) === String(device));
+            }
+            if (action) {
+                const act = action.toUpperCase();
+                filtered = filtered.filter(r => r.action && r.action.toUpperCase().endsWith(':' + act));
+            }
+            if (status) {
+                filtered = filtered.filter(r => r.status === status);
+            }
+            const total = filtered.length;
+            const offset = (page - 1) * pageSize;
+            const rows = filtered.slice(offset, offset + pageSize);
+            return { rows, total, page, pageSize };
+        }
+
+        function renderActionsUI(d) {
+            const tbody = document.getElementById('ah-tbody');
+            if (!d.rows || d.rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Không tìm thấy bản ghi nào</td></tr>`;
+            } else {
+                tbody.innerHTML = d.rows.map(r => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 border-b font-medium">${r.action_id}</td>
+                        <td class="p-3 border-b">${r.device_name || '—'}</td>
+                        <td class="p-3 border-b">${actionLabel(r.action)}</td>
+                        <td class="p-3 border-b">${statusBadge[r.status] || r.status}</td>
+                        <td class="p-3 border-b text-gray-500">${fmtDateTime(r.time)}</td>
+                        <td class="p-3 border-b font-mono text-xs">${r.response_ms != null ? r.response_ms + 'ms' : '—'}</td>
+                        <td class="p-3 border-b"><span class="px-2 py-0.5 rounded text-xs ${r.operator === 'MQTT' ? 'bg-purple-100 text-purple-700 font-semibold' : 'bg-blue-100 text-blue-700 font-medium'}">${escHtml(r.operator || '—')}</span></td>
+                    </tr>`).join('');
+            }
+            document.getElementById('ah-total').textContent = d.total;
+            document.getElementById('ah-page').textContent = d.page;
+            document.getElementById('ah-prev').disabled = d.page <= 1;
+            document.getElementById('ah-next').disabled = (d.page * d.pageSize) >= d.total;
+        }
+
+        async function loadActions() {
+            // 1. HIỂN THỊ NGAY TỨC THÌ TỪ DỮ LIỆU CỤC BỘ (0ms DELAY)
+            const localData = filterAndPaginateActions(ahState.page, ahState.pageSize, ahState.time, ahState.device, ahState.action, ahState.status);
+            renderActionsUI(localData);
+
+            // 2. NẾU CÓ SERVER, ĐỒNG BỘ NỀN NHẸ NHÀNG
+            if (!isFileProtocol) {
+                const params = new URLSearchParams({
+                    page: ahState.page, pageSize: ahState.pageSize, time: ahState.time,
+                    device: ahState.device, action: ahState.action, status: ahState.status
+                });
+                const d = await fastFetchJson("/api/actions?" + params.toString(), {}, 3000);
+                if (d && d.rows) {
+                    renderActionsUI(d);
+                }
+            }
+        }
+
+        function applyAhSearch() {
+            ahState.time = document.getElementById('ah-time').value.trim();
+            ahState.device = document.getElementById('ah-device').value;
+            ahState.action = document.getElementById('ah-action').value;
+            ahState.status = document.getElementById('ah-status').value;
+            ahState.page = 1;
+            loadActions();
+        }
+        document.getElementById('ah-search-btn').addEventListener('click', applyAhSearch);
+        document.getElementById('ah-time').addEventListener('keydown', e => { if (e.key === 'Enter') applyAhSearch(); });
+        document.getElementById('ah-pagesize').addEventListener('change', function () {
+            ahState.pageSize = parseInt(this.value, 10); ahState.page = 1; loadActions();
+        });
+        document.getElementById('ah-prev').addEventListener('click', () => { if (ahState.page > 1) { ahState.page--; loadActions(); } });
+        document.getElementById('ah-next').addEventListener('click', () => { ahState.page++; loadActions(); });
+
+        // ---------------------------------------------------------------
+        // TAB 4: PROFILE — hiển thị tức thì từ PROFILE_EXTRA
+        // ---------------------------------------------------------------
+        function setProfileField(id, value, kind) {
+            const el = document.getElementById('pf-' + id);
+            if (!el) return;
+            if (!value) { el.innerHTML = '<span class="text-gray-400 italic">(chưa điền)</span>'; return; }
+            if (kind === 'pdf') {
+                el.innerHTML = '';
+                const a = document.createElement('a');
+                a.href = value; a.target = '_blank'; a.rel = 'noopener';
+                a.className = 'inline-flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100';
+                a.innerHTML = '<i class="fas fa-file-pdf"></i><span>Xem báo cáo (PDF)</span>';
+                el.appendChild(a);
+            } else if (kind) {
+                el.innerHTML = '';
+                const a = document.createElement('a');
+                a.href = value; a.target = '_blank'; a.rel = 'noopener'; a.textContent = value;
+                a.className = 'text-blue-600 hover:underline break-all';
+                el.appendChild(a);
+            } else { el.textContent = value; }
+        }
+
+        function renderProfileUI(p) {
+            setProfileField('full_name', p.full_name);
+            setProfileField('username', p.username);
+            setProfileField('email', p.email);
+            setProfileField('class_name', p.class_name);
+            setProfileField('phone', p.phone);
+            setProfileField('project', p.project);
+            setProfileField('github', p.github, 'link');
+            setProfileField('postman', p.postman, 'link');
+            setProfileField('figma', p.figma, 'link');
+            setProfileField('report_pdf', p.report_pdf, 'pdf');
+            document.getElementById('pf-header-name').textContent = p.full_name || '(chưa điền họ tên)';
+            document.getElementById('pf-header-id').textContent = p.username ? ('MSSV: ' + p.username) : '(chưa điền MSSV)';
+            if (p.avatar) {
+                const img = document.createElement('img');
+                img.src = p.avatar; img.className = 'w-full h-full object-cover';
+                const box = document.getElementById('pf-avatar');
+                if (box) { box.innerHTML = ''; box.appendChild(img); }
+            }
+        }
+
+        async function loadProfile() {
+            renderProfileUI(PROFILE_EXTRA);
+
+            if (!isFileProtocol) {
+                const db = await fastFetchJson("/api/profile", {}, 3000);
+                if (db) {
+                    const validDb = {};
+                    if (db.username) validDb.username = db.username;
+                    if (db.full_name) validDb.full_name = db.full_name;
+                    if (db.email) validDb.email = db.email;
+                    renderProfileUI(Object.assign({}, PROFILE_EXTRA, validDb));
+                }
+            }
+        }
+
+        // ===============================================================
+        // KHỞI ĐỘNG: NẠP VÀ HIỂN THỊ ĐẦY ĐỦ NGAY LẬP TỨC (0ms)
+        // ===============================================================
+        initAuth();
+        renderDashboardUI({
+            temp: mockDashboardState.temp,
+            hum: mockDashboardState.hum,
+            light: mockDashboardState.light,
+            led1: mockDashboardState.led1,
+            led2: mockDashboardState.led2,
+            chart: chartInit
+        });
+        loadSensors();
+        loadActions();
+        loadProfile();
+
+        // Khôi phục tab trước khi F5 (datasensor, actionhistory, profile, dashboard)
+        const savedTab = (window.location.hash.replace('#', '') || localStorage.getItem('iot_active_tab') || 'dashboard').trim();
+        if (savedTab && savedTab !== 'dashboard') {
+            switchTab(savedTab);
+        }
+
+        // Tự động kiểm tra / làm mới định kỳ mỗi 5 giây
+        setInterval(loadDashboard, 2000);
+    </script>
+</body>
+
+</html>
