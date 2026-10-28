@@ -31,7 +31,7 @@ flowchart LR
 | `device/control/led1`, `device/control/led2` | giao diện/terminal → NodeMCU | `ON` hoặc `OFF` |
 | `device/control/all` | giao diện/terminal → NodeMCU | `{"led1":"ON","led2":"OFF"}` (1 lệnh điều khiển nhiều đèn) |
 | `device/response` | NodeMCU → broker | `{"id":1,"device":"led1","state":"ON","status":"success"}` |
-| `alert/light` | broker → NodeMCU / clients | `{"status":"alert","sensor":"light","value":850,"threshold":800,"message":"..."}` |
+
 
 ## API (Node-RED)
 
