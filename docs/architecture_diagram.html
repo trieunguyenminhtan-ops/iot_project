@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiến Trúc Tổng Thể Hệ Thống IoT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      min-height: 100vh;
+    }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: #ffffff;
+      padding: 10px 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      text-decoration: none;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #0f172a; }
+    .btn-secondary:hover { background: #1e293b; }
+    .diagram-container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      max-width: 1180px;
+      width: 100%;
+      overflow: hidden;
+      padding: 15px;
+    }
+    iframe { display: block; width: 100%; height: 500px; border: none; }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button class="btn btn-secondary" onclick="downloadPNG()">📸 Tải ảnh PNG chất lượng cao (cho Báo cáo / Slide)</button>
+    <a class="btn" href="architecture_diagram.svg" download="Kien_Truc_He_Thong_IoT.svg">📐 Tải file Vector SVG gốc</a>
+  </div>
+
+  <div class="diagram-container">
+    <iframe src="architecture_diagram.svg"></iframe>
+  </div>
+
+  <script>
+    async function downloadPNG() {
+      const response = await fetch('architecture_diagram.svg');
+      const svgText = await response.text();
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+      
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 2280; // Độ phân giải 2x siêu nét
+        canvas.height = 960;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        
+        const pngURL = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.download = 'Kien_Truc_Tong_The_IoT.png';
+        downloadLink.href = pngURL;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+      image.src = blobURL;
+    }
+  </script>
+</body>
+</html>
