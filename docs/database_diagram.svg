@@ -1,0 +1,385 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 700" width="100%" height="100%">
+  <defs>
+    <!-- Filter bóng đổ mềm mại -->
+    <filter id="table-shadow" x="-5%" y="-5%" width="110%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+
+    <!-- Đầu nối quan hệ (Crow's foot / Mũi tên liên kết) -->
+    <marker id="relation-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284C7"/>
+    </marker>
+    <marker id="relation-arrow-left" viewBox="0 0 10 10" refX="3" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 10 1.5 L 2 5 L 10 8.5 z" fill="#0284C7"/>
+    </marker>
+
+    <!-- Lưới kỹ thuật nền trắng mờ -->
+    <pattern id="db-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#F1F5F9" stroke-width="1.2"/>
+    </pattern>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .page-title { font-size: 20px; font-weight: 700; fill: #0F172A; }
+    .page-sub { font-size: 13px; fill: #64748B; }
+    .table-title { font-size: 14px; font-weight: 700; fill: #FFFFFF; }
+    .table-desc { font-size: 10.5px; fill: rgba(255, 255, 255, 0.85); }
+    .col-pk { font-size: 9px; font-weight: 700; fill: #D97706; }
+    .col-fk { font-size: 9px; font-weight: 700; fill: #2563EB; }
+    .col-uq { font-size: 9px; font-weight: 700; fill: #7C3AED; }
+    .col-name { font-size: 11.5px; font-weight: 600; fill: #1E293B; }
+    .col-type { font-size: 11px; fill: #64748B; }
+    .rel-badge-text { font-size: 10px; font-weight: 700; fill: #0284C7; text-anchor: middle; }
+    .cluster-title { font-size: 12px; font-weight: 700; fill: #475569; letter-spacing: 0.5px; text-transform: uppercase; }
+  </style>
+
+  <!-- NỀN TRẮNG TOÀN PHẦN -->
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+  <rect width="100%" height="100%" fill="url(#db-grid)"/>
+
+  <!-- TIÊU ĐỀ SƠ ĐỒ -->
+  <g transform="translate(50, 45)">
+    <text class="page-title" x="0" y="0">SƠ ĐỒ THỰC THỂ LIÊN KẾT CƠ SỞ DỮ LIỆU (ERD - DATABASE SCHEMA)</text>
+    <text class="page-sub" x="0" y="20">Cơ sở dữ liệu: iot_project (MySQL 8.0) · Chuẩn 5 bảng phân bổ theo 2 phân hệ nghiệp vụ độc lập</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- ĐƯỜNG KẾT NỐI KHÓA NGOẠI (FOREIGN KEY RELATIONSHIPS) -->
+  <!-- ======================================================== -->
+
+  <!-- Quan hệ 1: devices (1) -> actions (N) -->
+  <g>
+    <path d="M 320 170 L 465 170" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
+    <circle cx="320" cy="170" r="3.5" fill="#0284C7"/>
+    <rect x="345" y="152" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="392.5" y="166">1 : N (device_id)</text>
+  </g>
+
+  <!-- Quan hệ 2: users (1) -> actions (N) -->
+  <g>
+    <path d="M 940 170 L 765 170" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow-left)"/>
+    <circle cx="940" cy="170" r="3.5" fill="#0284C7"/>
+    <rect x="800" y="152" width="90" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="845" y="166">1 : N (user_id)</text>
+  </g>
+
+  <!-- Quan hệ 3: sensors (1) -> data_sensors (N) -->
+  <g>
+    <path d="M 520 540 L 735 540" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
+    <circle cx="520" cy="540" r="3.5" fill="#0284C7"/>
+    <rect x="580" y="522" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="627.5" y="536">1 : N (sensor_id)</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- PHÂN HỆ 1: QUẢN LÝ THIẾT BỊ & ĐIỀU KHIỂN (ROW 1) -->
+  <!-- ======================================================== -->
+  <text class="cluster-title" x="50" y="98">PHÂN HỆ 1: QUẢN LÝ THIẾT BỊ, NGƯỜI DÙNG &amp; LỊCH SỬ ĐIỀU KHIỂN (DEVICES - ACTIONS - USERS)</text>
+
+  <!-- BẢNG 1: devices (X: 50, Y: 115) -->
+  <g transform="translate(50, 115)" filter="url(#table-shadow)">
+    <rect width="270" height="230" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <!-- Header -->
+    <path d="M 0 8 A 8 8 0 0 1 8 0 L 262 0 A 8 8 0 0 1 270 8 L 270 42 L 0 42 Z" fill="#2563EB"/>
+    <text class="table-title" x="14" y="24">devices</text>
+    <text class="table-desc" x="14" y="36">Danh mục thiết bị điều khiển</text>
+
+    <!-- Field Rows -->
+    <g transform="translate(14, 60)">
+      <!-- device_id (PK) -->
+      <rect x="0" y="-12" width="22" height="14" rx="3" fill="#FEF3C7"/>
+      <text class="col-pk" x="4" y="-1">PK</text>
+      <text class="col-name" x="28" y="0">device_id</text>
+      <text class="col-type" x="240" y="0" text-anchor="end">INT (11) AI</text>
+      <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+
+      <!-- device_code (UQ) -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#EDE9FE"/>
+        <text class="col-uq" x="3" y="-1">UQ</text>
+        <text class="col-name" x="28" y="0">device_code</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(50)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- device_name -->
+      <g transform="translate(0, 48)">
+        <text class="col-name" x="28" y="0">device_name</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(100)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- device_type -->
+      <g transform="translate(0, 72)">
+        <text class="col-name" x="28" y="0">device_type</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(50)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- status -->
+      <g transform="translate(0, 96)">
+        <text class="col-name" x="28" y="0">status</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(20)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- created_at -->
+      <g transform="translate(0, 120)">
+        <text class="col-name" x="28" y="0">created_at</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">DATETIME</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- updated_at -->
+      <g transform="translate(0, 144)">
+        <text class="col-name" x="28" y="0">updated_at</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">DATETIME</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- BẢNG 2: actions (X: 470, Y: 115) -->
+  <g transform="translate(470, 115)" filter="url(#table-shadow)">
+    <rect width="290" height="230" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <!-- Header -->
+    <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#D97706"/>
+    <text class="table-title" x="14" y="24">actions</text>
+    <text class="table-desc" x="14" y="36">Lịch sử điều khiển &amp; Đo thời gian phản hồi (ms)</text>
+
+    <!-- Field Rows -->
+    <g transform="translate(14, 60)">
+      <!-- action_id (PK) -->
+      <rect x="0" y="-12" width="22" height="14" rx="3" fill="#FEF3C7"/>
+      <text class="col-pk" x="4" y="-1">PK</text>
+      <text class="col-name" x="28" y="0">action_id</text>
+      <text class="col-type" x="260" y="0" text-anchor="end">BIGINT (20) AI</text>
+      <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+
+      <!-- device_id (FK) -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#DBEAFE"/>
+        <text class="col-fk" x="4" y="-1">FK</text>
+        <text class="col-name" x="28" y="0">device_id</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">INT (11) NULL</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- user_id (FK) -->
+      <g transform="translate(0, 48)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#DBEAFE"/>
+        <text class="col-fk" x="4" y="-1">FK</text>
+        <text class="col-name" x="28" y="0">user_id</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">INT (11) NULL</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- action -->
+      <g transform="translate(0, 72)">
+        <text class="col-name" x="28" y="0">action</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">TEXT</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- status -->
+      <g transform="translate(0, 96)">
+        <text class="col-name" x="28" y="0">status</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">TEXT</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- time -->
+      <g transform="translate(0, 120)">
+        <text class="col-name" x="28" y="0">time</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DATETIME (3)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- time_response -->
+      <g transform="translate(0, 144)">
+        <text class="col-name" x="28" y="0">time_response</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DATETIME (3)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- BẢNG 3: users (X: 940, Y: 115) -->
+  <g transform="translate(940, 115)" filter="url(#table-shadow)">
+    <rect width="270" height="255" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <!-- Header -->
+    <path d="M 0 8 A 8 8 0 0 1 8 0 L 262 0 A 8 8 0 0 1 270 8 L 270 42 L 0 42 Z" fill="#7C3AED"/>
+    <text class="table-title" x="14" y="24">users</text>
+    <text class="table-desc" x="14" y="36">Quản lý người dùng &amp; Phân quyền (RBAC)</text>
+
+    <!-- Field Rows -->
+    <g transform="translate(14, 60)">
+      <!-- user_id (PK) -->
+      <rect x="0" y="-12" width="22" height="14" rx="3" fill="#FEF3C7"/>
+      <text class="col-pk" x="4" y="-1">PK</text>
+      <text class="col-name" x="28" y="0">user_id</text>
+      <text class="col-type" x="240" y="0" text-anchor="end">INT (11) AI</text>
+      <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+
+      <!-- username (UQ) -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#EDE9FE"/>
+        <text class="col-uq" x="3" y="-1">UQ</text>
+        <text class="col-name" x="28" y="0">username</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(50)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- password -->
+      <g transform="translate(0, 48)">
+        <text class="col-name" x="28" y="0">password</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(255)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- full_name -->
+      <g transform="translate(0, 72)">
+        <text class="col-name" x="28" y="0">full_name</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(100)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- email (UQ) -->
+      <g transform="translate(0, 96)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#EDE9FE"/>
+        <text class="col-uq" x="3" y="-1">UQ</text>
+        <text class="col-name" x="28" y="0">email</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(100)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- role -->
+      <g transform="translate(0, 120)">
+        <text class="col-name" x="28" y="0">role</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">VARCHAR(20)</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- created_at -->
+      <g transform="translate(0, 144)">
+        <text class="col-name" x="28" y="0">created_at</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">DATETIME</text>
+        <line x1="0" y1="9" x2="242" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- status -->
+      <g transform="translate(0, 168)">
+        <text class="col-name" x="28" y="0">status</text>
+        <text class="col-type" x="240" y="0" text-anchor="end">TINYINT (4)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- PHÂN HỆ 2: THU THẬP DỮ LIỆU CẢM BIẾN (ROW 2) -->
+  <!-- ======================================================== -->
+  <text class="cluster-title" x="50" y="420">PHÂN HỆ 2: DANH MỤC CẢM BIẾN &amp; LỊCH SỬ THU THẬP DỮ LIỆU (SENSORS - DATA_SENSORS)</text>
+
+  <!-- BẢNG 4: sensors (X: 230, Y: 435) -->
+  <g transform="translate(230, 435)" filter="url(#table-shadow)">
+    <rect width="290" height="210" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <!-- Header -->
+    <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#059669"/>
+    <text class="table-title" x="14" y="24">sensors</text>
+    <text class="table-desc" x="14" y="36">Danh mục các loại cảm biến trong hệ thống</text>
+
+    <!-- Field Rows -->
+    <g transform="translate(14, 60)">
+      <!-- sensor_id (PK) -->
+      <rect x="0" y="-12" width="22" height="14" rx="3" fill="#FEF3C7"/>
+      <text class="col-pk" x="4" y="-1">PK</text>
+      <text class="col-name" x="28" y="0">sensor_id</text>
+      <text class="col-type" x="260" y="0" text-anchor="end">BIGINT (20) AI</text>
+      <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+
+      <!-- sensor_code (UQ) -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#EDE9FE"/>
+        <text class="col-uq" x="3" y="-1">UQ</text>
+        <text class="col-name" x="28" y="0">sensor_code</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">VARCHAR(50)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- sensor_name -->
+      <g transform="translate(0, 48)">
+        <text class="col-name" x="28" y="0">sensor_name</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">VARCHAR(100)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- sensor_type -->
+      <g transform="translate(0, 72)">
+        <text class="col-name" x="28" y="0">sensor_type</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">VARCHAR(30)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- unit -->
+      <g transform="translate(0, 96)">
+        <text class="col-name" x="28" y="0">unit</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">VARCHAR(20)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- created_at -->
+      <g transform="translate(0, 120)">
+        <text class="col-name" x="28" y="0">created_at</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DATETIME</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- BẢNG 5: data_sensors (X: 740, Y: 435) -->
+  <g transform="translate(740, 435)" filter="url(#table-shadow)">
+    <rect width="290" height="190" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <!-- Header -->
+    <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#0891B2"/>
+    <text class="table-title" x="14" y="24">data_sensors</text>
+    <text class="table-desc" x="14" y="36">Lịch sử dữ liệu đo đạc từ các cảm biến (Telemetry)</text>
+
+    <!-- Field Rows -->
+    <g transform="translate(14, 60)">
+      <!-- data_id (PK) -->
+      <rect x="0" y="-12" width="22" height="14" rx="3" fill="#FEF3C7"/>
+      <text class="col-pk" x="4" y="-1">PK</text>
+      <text class="col-name" x="28" y="0">data_id</text>
+      <text class="col-type" x="260" y="0" text-anchor="end">BIGINT (20) AI</text>
+      <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+
+      <!-- sensor_id (FK) -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="-12" width="22" height="14" rx="3" fill="#DBEAFE"/>
+        <text class="col-fk" x="4" y="-1">FK</text>
+        <text class="col-name" x="28" y="0">sensor_id</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">BIGINT (20)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- value -->
+      <g transform="translate(0, 48)">
+        <text class="col-name" x="28" y="0">value</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DECIMAL(10,2)</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- recorded_at -->
+      <g transform="translate(0, 72)">
+        <text class="col-name" x="28" y="0">recorded_at</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DATETIME</text>
+        <line x1="0" y1="9" x2="262" y2="9" stroke="#F1F5F9" stroke-width="1"/>
+      </g>
+
+      <!-- created_at -->
+      <g transform="translate(0, 96)">
+        <text class="col-name" x="28" y="0">created_at</text>
+        <text class="col-type" x="260" y="0" text-anchor="end">DATETIME</text>
+      </g>
+    </g>
+  </g>
+
+</svg>
