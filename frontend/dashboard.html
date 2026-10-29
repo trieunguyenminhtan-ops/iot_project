@@ -941,7 +941,7 @@
                 }
             });
 
-            // Phân quyền cho Viewer: không thể xem datasensor, actionhistory, profile
+            // Phân quyền cho Viewer: không thể xem datasensor, actionhistory
             const btnDs = document.getElementById('btn-datasensor');
             const btnAct = document.getElementById('btn-actionhistory');
             const btnProf = document.getElementById('btn-profile');
@@ -951,10 +951,8 @@
                     btnDs.title = 'Tài khoản Người xem không có quyền truy cập Data sensor';
                     btnAct.classList.add('opacity-40');
                     btnAct.title = 'Tài khoản Người xem không có quyền truy cập Action history';
-                    btnProf.classList.add('opacity-40');
-                    btnProf.title = 'Tài khoản Người xem không có quyền truy cập Profile';
                     const curActive = document.querySelector('.tab-content.active');
-                    if (curActive && (curActive.id === 'tab-datasensor' || curActive.id === 'tab-actionhistory' || curActive.id === 'tab-profile')) {
+                    if (curActive && (curActive.id === 'tab-datasensor' || curActive.id === 'tab-actionhistory')) {
                         switchTab('dashboard');
                     }
                 } else {
@@ -962,10 +960,25 @@
                     btnDs.title = '';
                     btnAct.classList.remove('opacity-40');
                     btnAct.title = '';
+                }
+
+                // CHỈ ADMIN MỚI CÓ PROFILE: tài khoản khác (User, Viewer, Khách) không có profile này
+                const isAdmin = (role === 'admin') && isLoggedIn;
+                if (!isAdmin) {
+                    btnProf.classList.add('opacity-40');
+                    btnProf.title = 'Chỉ tài khoản Quản trị viên (Admin) mới có Profile';
+                    const curActive = document.querySelector('.tab-content.active');
+                    if (curActive && curActive.id === 'tab-profile') {
+                        switchTab('dashboard');
+                    }
+                } else {
                     btnProf.classList.remove('opacity-40');
                     btnProf.title = '';
                 }
             }
+
+            // Đồng bộ lại nội dung Profile theo role hiện tại
+            loadProfile();
         }
 
         async function fastFetchJson(endpoint, options = {}, timeoutMs = 3000) {
@@ -994,9 +1007,19 @@
         // ---------------------------------------------------------------
         function switchTab(tabId) {
             const u = (currentAuth && currentAuth.user) || { role: 'viewer' };
-            const isViewer = (u.role === 'viewer') || !currentAuth.token;
+            const isLoggedIn = !!currentAuth.token;
+            const role = u.role || 'viewer';
+            const isAdmin = (role === 'admin') && isLoggedIn;
+            const isViewer = (role === 'viewer') || !isLoggedIn;
+
             if (isViewer && (tabId === 'datasensor' || tabId === 'actionhistory' || tabId === 'profile')) {
                 showToast('Tài khoản Người xem (Viewer) không có quyền truy cập trang này!', 'warning');
+                return;
+            }
+
+            // CHỈ ADMIN MỚI CÓ PROFILE
+            if (tabId === 'profile' && !isAdmin) {
+                showToast('Chỉ tài khoản Quản trị viên (Admin) mới có Profile!', 'warning');
                 return;
             }
 
@@ -1655,36 +1678,48 @@
             setProfileField('figma', p.figma, 'link');
             setProfileField('report_pdf', p.report_pdf, 'pdf');
             document.getElementById('pf-header-name').textContent = p.full_name || '(chưa điền họ tên)';
-            document.getElementById('pf-header-id').textContent = p.username ? ('MSSV: ' + p.username) : '(chưa điền MSSV)';
+            if (p.username && p.username.startsWith('B')) {
+                document.getElementById('pf-header-id').textContent = 'MSSV: ' + p.username;
+            } else if (p.username) {
+                document.getElementById('pf-header-id').textContent = 'Tài khoản: ' + p.username;
+            } else {
+                document.getElementById('pf-header-id').textContent = '(chưa điền MSSV)';
+            }
+            const box = document.getElementById('pf-avatar');
             if (p.avatar) {
                 const img = document.createElement('img');
                 img.src = p.avatar; img.className = 'w-full h-full object-cover';
-                const box = document.getElementById('pf-avatar');
                 if (box) { box.innerHTML = ''; box.appendChild(img); }
+            } else {
+                if (box) { box.innerHTML = '<i class="fas fa-user-graduate"></i>'; }
             }
         }
 
         async function loadProfile() {
-            renderProfileUI(PROFILE_EXTRA);
+            const u = (currentAuth && currentAuth.user) || {};
+            const isLoggedIn = !!(currentAuth && currentAuth.token);
+            const role = u.role || 'viewer';
 
-            if (!isFileProtocol) {
-                const db = await fastFetchJson("/api/profile", {}, 3000);
-                if (db) {
-                    const validDb = {};
-                    if (db.username) validDb.username = db.username;
-                    if (db.full_name) validDb.full_name = db.full_name;
-                    if (db.email) validDb.email = db.email;
-                    // Kết hợp dữ liệu: PROFILE_EXTRA (thông tin sinh viên điền) được ưu tiên hàng đầu,
-                    // chỉ dùng dữ liệu DB làm fallback nếu PROFILE_EXTRA để trống.
-                    const merged = Object.assign({}, validDb);
-                    Object.keys(PROFILE_EXTRA).forEach(k => {
-                        if (PROFILE_EXTRA[k] !== undefined && PROFILE_EXTRA[k] !== null && String(PROFILE_EXTRA[k]).trim() !== '') {
-                            merged[k] = PROFILE_EXTRA[k];
-                        }
-                    });
-                    renderProfileUI(merged);
-                }
+            // CHỈ CÓ ADMIN MỚI CÓ PROFILE "Triệu Nguyễn Minh Tân"
+            if (role === 'admin' && isLoggedIn) {
+                renderProfileUI(PROFILE_EXTRA);
+                return;
             }
+
+            // Các tài khoản khác (User, Viewer, Chưa đăng nhập) KHÔNG CÓ profile đấy
+            renderProfileUI({
+                full_name: (isLoggedIn && u.full_name) ? u.full_name : 'Người dùng',
+                username: (isLoggedIn && u.username) ? u.username : '',
+                email: (isLoggedIn && u.email) ? u.email : '',
+                class_name: '',
+                phone: '',
+                project: '',
+                github: '',
+                postman: '',
+                figma: '',
+                report_pdf: '',
+                avatar: ''
+            });
         }
 
         // ===============================================================
