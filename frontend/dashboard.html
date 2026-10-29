@@ -469,22 +469,6 @@
                 </table>
             </div>
         </div>
-
-        <!-- ================= CHÂN TRANG (FOOTER) DỮ LIỆU TỪ /api/footer ================= -->
-        <footer id="app-footer" class="mt-auto pt-2 pb-1 text-[11px] text-gray-500 border-t border-gray-200/80 flex items-center justify-between shrink-0 px-2 bg-slate-50/60 rounded-lg">
-            <div class="flex items-center gap-2">
-                <span class="font-semibold text-gray-700" id="footer-project">Hệ thống IoT</span>
-                <span class="text-gray-300">•</span>
-                <span id="footer-version" class="text-blue-600 font-mono font-medium">v1.0.0</span>
-                <span class="text-gray-300">•</span>
-                <span id="footer-author">Triệu Nguyễn Minh Tân (B23DCAT271)</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <span id="footer-infra" class="hidden md:inline text-gray-400">NodeMCU ESP8266 • Mosquitto: 8000 • MySQL 8.0</span>
-                <span class="text-gray-300 hidden md:inline">•</span>
-                <span id="footer-copyright">© 2026 PTIT IoT Project</span>
-            </div>
-        </footer>
     </main>
 
     <!-- MÃ JAVASCRIPT ĐỂ CHUYỂN TAB, VẼ BIỂU ĐỒ VÀ GỌI API THẬT TỪ NODE-RED -->
@@ -995,7 +979,6 @@
 
             // Đồng bộ lại nội dung Profile theo role hiện tại
             loadProfile();
-        loadFooter();
         }
 
         async function fastFetchJson(endpoint, options = {}, timeoutMs = 3000) {
@@ -1738,19 +1721,6 @@
                 avatar: ''
             });
         }
-
-                async function loadFooter() {
-            if (isFileProtocol) return;
-            const data = await fastFetchJson("/api/footer", {}, 2000);
-            if (data && data.ok) {
-                const elProj = document.getElementById('footer-project');
-                if (elProj && data.project) elProj.textContent = data.project;
-                const elVer = document.getElementById('footer-version');
-                if (elVer && data.version) elVer.textContent = 'v' + data.version;
-                const elAuth = document.getElementById('footer-author');
-                if (elAuth && data.author) {
-                    elAuth.textContent = data.author.full_name + ' (' + data.author.student_id + ' - ' + data.author.class_name + ')';
-                }
                 const elCopy = document.getElementById('footer-copyright');
                 if (elCopy && data.copyright) elCopy.textContent = data.copyright;
             }

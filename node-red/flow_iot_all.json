@@ -957,49 +957,5 @@
         "x": 600,
         "y": 840,
         "wires": []
-    },
-    {
-        "id": "h_footer",
-        "type": "http in",
-        "z": "flow_dashboard_api",
-        "name": "GET /api/footer",
-        "url": "/api/footer",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 160,
-        "y": 640,
-        "wires": [
-            [
-                "fn_footer_resp"
-            ]
-        ]
-    },
-    {
-        "id": "fn_footer_resp",
-        "type": "function",
-        "z": "flow_dashboard_api",
-        "name": "Tao phan hoi footer (chan trang)",
-        "func": "msg.statusCode = 200;\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\",\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    ok: true,\n    project: \"Hệ thống giám sát môi trường và điều khiển thiết bị IoT\",\n    version: \"1.0.0\",\n    author: {\n        full_name: \"Triệu Nguyễn Minh Tân\",\n        student_id: \"B23DCAT271\",\n        class_name: \"D23CQAT01-B\",\n        email: \"trieunguyenminhtan@gmail.com\",\n        phone: \"0845620255\",\n        university: \"Học viện Công nghệ Bưu chính Viễn thông (PTIT)\"\n    },\n    links: {\n        github: \"https://github.com/trieunguyenminhtan-ops/iot_project\",\n        postman: \"https://documenter.getpostman.com/view/59265981/2sBYHVwKD2\",\n        figma: \"https://www.figma.com/design/aspO5tDv2OblazGS3toX3F/IOT_figma?node-id=0-1&t=caShhlYFYGxx9peV-1\",\n        report_pdf: \"https://drive.google.com/file/d/15XEHZ1aj5_eXvdZRVXRdJlNcZaLGECRm/view?usp=sharing\"\n    },\n    infrastructure: {\n        mcu: \"NodeMCU v3 ESP8266 (CH340)\",\n        broker: \"Mosquitto MQTT (port 8000 WebSocket / 1883 TCP)\",\n        backend: \"Node-RED 5.0 (port 8800)\",\n        database: \"MySQL 8.0 (iot_project)\",\n        sensors: \"DHT11 (D2), LDR (A0)\",\n        actuators: \"LED 1 (D5), LED 2 (D6)\"\n    },\n    copyright: \"© 2026 PTIT IoT Project. All rights reserved.\",\n    server_time: new Date().toISOString()\n};\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 450,
-        "y": 640,
-        "wires": [
-            [
-                "h_footer_http_out"
-            ]
-        ]
-    },
-    {
-        "id": "h_footer_http_out",
-        "type": "http response",
-        "z": "flow_dashboard_api",
-        "name": "Response footer",
-        "statusCode": "",
-        "headers": {},
-        "x": 750,
-        "y": 640,
-        "wires": []
     }
 ]
