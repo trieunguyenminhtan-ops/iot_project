@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -153,15 +153,19 @@
         <!-- ================= MÀN HÌNH 1.1: DASHBOARD ================= -->
         <div id="tab-dashboard" class="tab-content active flex-col h-full w-full gap-4">
             <!-- Cảnh báo khi NodeMCU mất kết nối -->
-            <div id="nodemcu-disconnect-alert" class="hidden p-3.5 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm flex items-center justify-between text-red-700 animate-pulse transition-all shrink-0">
+            <div id="nodemcu-disconnect-alert"
+                class="hidden p-3.5 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm flex items-center justify-between text-red-700 animate-pulse transition-all shrink-0">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-satellite-dish text-xl text-red-500"></i>
                     <div>
-                        <p class="font-bold text-xs uppercase tracking-wide">Cảnh báo: Mất kết nối với thiết bị NodeMCU ESP8266!</p>
-                        <p class="text-xs text-red-600 mt-0.5">Không nhận được dữ liệu cảm biến từ NodeMCU. Vui lòng kiểm tra lại</p>
+                        <p class="font-bold text-xs uppercase tracking-wide">Cảnh báo: Mất kết nối với thiết bị NodeMCU
+                            ESP8266!</p>
+                        <p class="text-xs text-red-600 mt-0.5">Không nhận được dữ liệu cảm biến từ NodeMCU. Vui lòng
+                            kiểm tra lại</p>
                     </div>
                 </div>
-                <span class="text-[11px] font-bold px-2.5 py-1 rounded bg-red-200 text-red-800 uppercase tracking-wider shrink-0 font-mono">
+                <span
+                    class="text-[11px] font-bold px-2.5 py-1 rounded bg-red-200 text-red-800 uppercase tracking-wider shrink-0 font-mono">
                     DISCONNECTED
                 </span>
             </div>
@@ -481,14 +485,14 @@
         const PROFILE_EXTRA = {
             full_name: "Triệu Nguyễn Minh Tân",
             username: "B23DCAT271",
-            email: "",
+            email: "trieunguyenminhtan@gmail.com",
             class_name: "D23CQAT01-B",
-            phone: "",
+            phone: "0845620255",
             project: "IOT - Hệ thống cảm biến giám sát môi trường và điều khiển thiết bị",
-            github: "",
-            postman: "",
-            figma: "",
-            report_pdf: "",
+            github: "https://github.com/trieunguyenminhtan-ops/iot_project",
+            postman: "https://documenter.getpostman.com/view/59265981/2sBYHVwKD2",
+            figma: "https://www.figma.com/design/aspO5tDv2OblazGS3toX3F/IOT_figma?node-id=0-1&t=caShhlYFYGxx9peV-1",
+            report_pdf: "https://drive.google.com/file/d/15XEHZ1aj5_eXvdZRVXRdJlNcZaLGECRm/view?usp=sharing",
             avatar: ""        // Link ảnh đại diện (tuỳ chọn)
         };
         const DEFAULT_PAGE_SIZE = 10;
@@ -508,7 +512,7 @@
         const savedChartStr = localStorage.getItem('iot_last_chart');
         let initialChartData = { 1: [], 2: [], 3: [] };
         if (savedChartStr) {
-            try { initialChartData = JSON.parse(savedChartStr); } catch(e) {}
+            try { initialChartData = JSON.parse(savedChartStr); } catch (e) { }
         }
         const mockDashboardState = {
             temp: savedTemp ? parseFloat(savedTemp) : null,
@@ -669,14 +673,14 @@
             }, 3500);
         }
 
-        let currentAuth = (function() {
+        let currentAuth = (function () {
             try {
                 const sUser = localStorage.getItem('iot_user');
                 const sToken = localStorage.getItem('iot_token');
                 if (sUser && sToken) {
                     return { token: sToken, user: JSON.parse(sUser) };
                 }
-            } catch(e) {}
+            } catch (e) { }
             return {
                 token: '',
                 user: { user_id: 2, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
@@ -1013,7 +1017,7 @@
             // Lưu tab hiện tại vào localStorage và URL hash để khi F5 không bị quay lại dashboard
             localStorage.setItem('iot_active_tab', tabId);
             if (window.location.hash !== '#' + tabId) {
-                try { history.replaceState(null, '', '#' + tabId); } catch(e) {}
+                try { history.replaceState(null, '', '#' + tabId); } catch (e) { }
             }
 
             if (tabId === 'datasensor') { dsState.page = 1; loadSensors(); }
@@ -1670,7 +1674,15 @@
                     if (db.username) validDb.username = db.username;
                     if (db.full_name) validDb.full_name = db.full_name;
                     if (db.email) validDb.email = db.email;
-                    renderProfileUI(Object.assign({}, PROFILE_EXTRA, validDb));
+                    // Kết hợp dữ liệu: PROFILE_EXTRA (thông tin sinh viên điền) được ưu tiên hàng đầu,
+                    // chỉ dùng dữ liệu DB làm fallback nếu PROFILE_EXTRA để trống.
+                    const merged = Object.assign({}, validDb);
+                    Object.keys(PROFILE_EXTRA).forEach(k => {
+                        if (PROFILE_EXTRA[k] !== undefined && PROFILE_EXTRA[k] !== null && String(PROFILE_EXTRA[k]).trim() !== '') {
+                            merged[k] = PROFILE_EXTRA[k];
+                        }
+                    });
+                    renderProfileUI(merged);
                 }
             }
         }
