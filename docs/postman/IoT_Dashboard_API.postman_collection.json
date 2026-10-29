@@ -743,7 +743,7 @@
                                                                          "value":  "application/json"
                                                                      }
                                                                  ],
-                                                      "description":  "Gửi lệnh bật/tắt đèn: Node-RED publish MQTT tới `device/control/\u003cdevice\u003e`, NodeMCU thực thi rồi phản hồi ở `device/response`. Lệnh được ghi vào bảng `actions` (trạng thái `pending` → `success`/`failed`/`timeout`).\n\n**Body (JSON):** `device` = `led1` hoặc `led2`; `action` = `ON` hoặc `OFF`.\n\nLỗi tham số trả HTTP **400** kèm `{\"ok\": false, \"error\": \"...\"}`.",
+                                                      "description":  "Gửi lệnh Bật Đèn 1: device=led1, action=ON qua POST /api/control.",
                                                       "body":  {
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}",
@@ -765,98 +765,11 @@
                                                               }
                                                   },
                                       "response":  [
-                                                       {
-                                                           "name":  "200 - Gửi lệnh thành công",
-                                                           "originalRequest":  {
-                                                                                   "method":  "POST",
-                                                                                   "header":  [
-                                                                                                  {
-                                                                                                      "key":  "Content-Type",
-                                                                                                      "value":  "application/json"
-                                                                                                  }
-                                                                                              ],
-                                                                                   "url":  {
-                                                                                               "raw":  "{{base_url}}/api/control",
-                                                                                               "host":  [
-                                                                                                            "{{base_url}}"
-                                                                                                        ],
-                                                                                               "path":  [
-                                                                                                            "api",
-                                                                                                            "control"
-                                                                                                        ]
-                                                                                           },
-                                                                                   "body":  {
-                                                                                                "mode":  "raw",
-                                                                                                "raw":  "{\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}",
-                                                                                                "options":  {
-                                                                                                                "raw":  {
-                                                                                                                            "language":  "json"
-                                                                                                                        }
-                                                                                                            }
-                                                                                            }
-                                                                               },
-                                                           "status":  "OK",
-                                                           "code":  200,
-                                                           "_postman_previewlanguage":  "json",
-                                                           "header":  [
-                                                                          {
-                                                                              "key":  "Content-Type",
-                                                                              "value":  "application/json; charset=utf-8"
-                                                                          }
-                                                                      ],
-                                                           "cookie":  [
 
-                                                                      ],
-                                                           "body":  "{\n  \"ok\": true,\n  \"device\": \"led1\",\n  \"action\": \"ON\"\n}"
-                                                       },
-                                                       {
-                                                           "name":  "400 - Thiết bị không hợp lệ",
-                                                           "originalRequest":  {
-                                                                                   "method":  "POST",
-                                                                                   "header":  [
-                                                                                                  {
-                                                                                                      "key":  "Content-Type",
-                                                                                                      "value":  "application/json"
-                                                                                                  }
-                                                                                              ],
-                                                                                   "url":  {
-                                                                                               "raw":  "{{base_url}}/api/control",
-                                                                                               "host":  [
-                                                                                                            "{{base_url}}"
-                                                                                                        ],
-                                                                                               "path":  [
-                                                                                                            "api",
-                                                                                                            "control"
-                                                                                                        ]
-                                                                                           },
-                                                                                   "body":  {
-                                                                                                "mode":  "raw",
-                                                                                                "raw":  "{\n  \"device\": \"led9\",\n  \"action\": \"ON\"\n}",
-                                                                                                "options":  {
-                                                                                                                "raw":  {
-                                                                                                                            "language":  "json"
-                                                                                                                        }
-                                                                                                            }
-                                                                                            }
-                                                                               },
-                                                           "status":  "Bad Request",
-                                                           "code":  400,
-                                                           "_postman_previewlanguage":  "json",
-                                                           "header":  [
-                                                                          {
-                                                                              "key":  "Content-Type",
-                                                                              "value":  "application/json; charset=utf-8"
-                                                                          }
-                                                                      ],
-                                                           "cookie":  [
-
-                                                                      ],
-                                                           "body":  "{\n  \"ok\": false,\n  \"error\": \"device phai la led1/led2, action phai la ON/OFF\"\n}"
-                                                       }
                                                    ]
                                   },
                                   {
-                                      "name":  "Tắt Đèn 2",
+                                      "name":  "Tắt Đèn 1",
                                       "event":  [
                                                     {
                                                         "listen":  "test",
@@ -865,7 +778,7 @@
                                                                        "exec":  [
                                                                                     "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
                                                                                     "var j = pm.response.json();",
-                                                                                    "pm.test(\"ok = true\", function () { pm.expect(j.ok).to.eql(true); });"
+                                                                                    "pm.test(\"ok = true, đúng thiết bị và hành động\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.device).to.eql(\"led1\"); pm.expect(j.action).to.eql(\"OFF\"); });"
                                                                                 ]
                                                                    }
                                                     }
@@ -878,7 +791,103 @@
                                                                          "value":  "application/json"
                                                                      }
                                                                  ],
-                                                      "description":  "Tắt Đèn 2.",
+                                                      "description":  "Gửi lệnh Tắt Đèn 1: device=led1, action=OFF qua POST /api/control.",
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"device\": \"led1\",\n  \"action\": \"OFF\"\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{base_url}}/api/control",
+                                                                  "host":  [
+                                                                               "{{base_url}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "control"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "Bật Đèn 2",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                                                                                    "var j = pm.response.json();",
+                                                                                    "pm.test(\"ok = true, đúng thiết bị và hành động\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.device).to.eql(\"led2\"); pm.expect(j.action).to.eql(\"ON\"); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "description":  "Gửi lệnh Bật Đèn 2: device=led2, action=ON qua POST /api/control.",
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"device\": \"led2\",\n  \"action\": \"ON\"\n}",
+                                                                   "options":  {
+                                                                                   "raw":  {
+                                                                                               "language":  "json"
+                                                                                           }
+                                                                               }
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{base_url}}/api/control",
+                                                                  "host":  [
+                                                                               "{{base_url}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "control"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "Tắt Đèn 2",
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                                                                                    "var j = pm.response.json();",
+                                                                                    "pm.test(\"ok = true, đúng thiết bị và hành động\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.device).to.eql(\"led2\"); pm.expect(j.action).to.eql(\"OFF\"); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ],
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "description":  "Gửi lệnh Tắt Đèn 2: device=led2, action=OFF qua POST /api/control.",
                                                       "body":  {
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}",
@@ -900,50 +909,7 @@
                                                               }
                                                   },
                                       "response":  [
-                                                       {
-                                                           "name":  "200 - Gửi lệnh thành công",
-                                                           "originalRequest":  {
-                                                                                   "method":  "POST",
-                                                                                   "header":  [
-                                                                                                  {
-                                                                                                      "key":  "Content-Type",
-                                                                                                      "value":  "application/json"
-                                                                                                  }
-                                                                                              ],
-                                                                                   "url":  {
-                                                                                               "raw":  "{{base_url}}/api/control",
-                                                                                               "host":  [
-                                                                                                            "{{base_url}}"
-                                                                                                        ],
-                                                                                               "path":  [
-                                                                                                            "api",
-                                                                                                            "control"
-                                                                                                        ]
-                                                                                           },
-                                                                                   "body":  {
-                                                                                                "mode":  "raw",
-                                                                                                "raw":  "{\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}",
-                                                                                                "options":  {
-                                                                                                                "raw":  {
-                                                                                                                            "language":  "json"
-                                                                                                                        }
-                                                                                                            }
-                                                                                            }
-                                                                               },
-                                                           "status":  "OK",
-                                                           "code":  200,
-                                                           "_postman_previewlanguage":  "json",
-                                                           "header":  [
-                                                                          {
-                                                                              "key":  "Content-Type",
-                                                                              "value":  "application/json; charset=utf-8"
-                                                                          }
-                                                                      ],
-                                                           "cookie":  [
 
-                                                                      ],
-                                                           "body":  "{\n  \"ok\": true,\n  \"device\": \"led2\",\n  \"action\": \"OFF\"\n}"
-                                                       }
                                                    ]
                                   },
                                   {
