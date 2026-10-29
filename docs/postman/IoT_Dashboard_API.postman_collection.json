@@ -1073,8 +1073,8 @@
             }
         },
         {
-            "name": "5. Profile",
-            "description": "Thông tin sinh viên.",
+            "name": "5. Profile & Chân trang (Footer)",
+            "description": "API thông tin sinh viên và thông tin chân trang (Footer) của hệ thống IoT.",
             "item": [
                 {
                     "name": "Thông tin sinh viên (từ bảng users)",
@@ -1138,6 +1138,44 @@
                             "body": "{\n  \"username\": \"B00DCXX000\",\n  \"full_name\": \"Nguyễn Văn A\",\n  \"email\": \"email@example.com\"\n}"
                         }
                     ]
+                },
+                {
+                    "name": "GET /api/footer (Thông tin chân trang hệ thống)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"HTTP 200 - Lấy thông tin chân trang thành công\", function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.test(\"Trả về đầy đủ thông tin đề tài, tác giả và hạ tầng\", function () {",
+                                    "    pm.expect(j.ok).to.eql(true);",
+                                    "    pm.expect(j.project).to.be.a(\"string\");",
+                                    "    pm.expect(j.author.full_name).to.eql(\"Triệu Nguyễn Minh Tân\");",
+                                    "    pm.expect(j.author.student_id).to.eql(\"B23DCAT271\");",
+                                    "    pm.expect(j.infrastructure.mcu).to.include(\"ESP8266\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/footer",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "footer"
+                            ]
+                        },
+                        "description": "Lấy thông tin chân trang (Footer): Tên đề tài, phiên bản, sinh viên thực hiện (Triệu Nguyễn Minh Tân - B23DCAT271 - D23CQAT01-B), các link tài liệu (GitHub, Postman, Figma, PDF) và thông số phần cứng hạ tầng (NodeMCU, MQTT, MySQL)."
+                    },
+                    "response": []
                 }
             ]
         },
