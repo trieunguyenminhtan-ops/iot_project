@@ -48,7 +48,7 @@
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
       border: 1px solid #e2e8f0;
-      max-width: 1180px;
+      max-width: 1260px;
       width: 100%;
       overflow: hidden;
       padding: 15px;
@@ -60,7 +60,7 @@
 
   <div class="toolbar">
     <button class="btn btn-secondary" onclick="downloadPNG()">📸 Tải ảnh PNG chất lượng cao (cho Báo cáo / Slide)</button>
-    <a class="btn" href="architecture_diagram.svg" download="Kien_Truc_He_Thong_IoT.svg">📐 Tải file Vector SVG gốc</a>
+    <a class="btn" href="architecture_diagram.svg" download="Kien_Truc_Tong_The_IoT.svg">📐 Tải file Vector SVG gốc</a>
   </div>
 
   <div class="diagram-container">
@@ -78,7 +78,7 @@
       const image = new Image();
       image.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = 2280; // Độ phân giải 2x siêu nét
+        canvas.width = 2460; // Độ phân giải 2x siêu nét
         canvas.height = 960;
         const context = canvas.getContext('2d');
         context.fillStyle = '#FFFFFF';
