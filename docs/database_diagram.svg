@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 700" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 585" width="100%" height="100%">
   <defs>
     <!-- Filter bóng đổ mềm mại -->
     <filter id="table-shadow" x="-5%" y="-5%" width="110%" height="110%" filterUnits="userSpaceOnUse">
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.06"/>
     </filter>
 
-    <!-- Đầu nối quan hệ (Crow's foot / Mũi tên liên kết) -->
+    <!-- Đầu nối quan hệ (Mũi tên liên kết) -->
     <marker id="relation-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284C7"/>
     </marker>
@@ -21,8 +21,6 @@
 
   <style>
     text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    .page-title { font-size: 20px; font-weight: 700; fill: #0F172A; }
-    .page-sub { font-size: 13px; fill: #64748B; }
     .table-title { font-size: 14px; font-weight: 700; fill: #FFFFFF; }
     .table-desc { font-size: 10.5px; fill: rgba(255, 255, 255, 0.85); }
     .col-pk { font-size: 9px; font-weight: 700; fill: #D97706; }
@@ -31,18 +29,11 @@
     .col-name { font-size: 11.5px; font-weight: 600; fill: #1E293B; }
     .col-type { font-size: 11px; fill: #64748B; }
     .rel-badge-text { font-size: 10px; font-weight: 700; fill: #0284C7; text-anchor: middle; }
-    .cluster-title { font-size: 12px; font-weight: 700; fill: #475569; letter-spacing: 0.5px; text-transform: uppercase; }
   </style>
 
   <!-- NỀN TRẮNG TOÀN PHẦN -->
   <rect width="100%" height="100%" fill="#FFFFFF"/>
   <rect width="100%" height="100%" fill="url(#db-grid)"/>
-
-  <!-- TIÊU ĐỀ SƠ ĐỒ -->
-  <g transform="translate(50, 45)">
-    <text class="page-title" x="0" y="0">SƠ ĐỒ THỰC THỂ LIÊN KẾT CƠ SỞ DỮ LIỆU (ERD - DATABASE SCHEMA)</text>
-    <text class="page-sub" x="0" y="20">Cơ sở dữ liệu: iot_project (MySQL 8.0) · Chuẩn 5 bảng phân bổ theo 2 phân hệ nghiệp vụ độc lập</text>
-  </g>
 
   <!-- ======================================================== -->
   <!-- ĐƯỜNG KẾT NỐI KHÓA NGOẠI (FOREIGN KEY RELATIONSHIPS) -->
@@ -50,35 +41,34 @@
 
   <!-- Quan hệ 1: devices (1) -> actions (N) -->
   <g>
-    <path d="M 320 170 L 465 170" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
-    <circle cx="320" cy="170" r="3.5" fill="#0284C7"/>
-    <rect x="345" y="152" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
-    <text class="rel-badge-text" x="392.5" y="166">1 : N (device_id)</text>
+    <path d="M 320 100 L 465 100" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
+    <circle cx="320" cy="100" r="3.5" fill="#0284C7"/>
+    <rect x="345" y="82" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="392.5" y="96">1 : N (device_id)</text>
   </g>
 
   <!-- Quan hệ 2: users (1) -> actions (N) -->
   <g>
-    <path d="M 940 170 L 765 170" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow-left)"/>
-    <circle cx="940" cy="170" r="3.5" fill="#0284C7"/>
-    <rect x="800" y="152" width="90" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
-    <text class="rel-badge-text" x="845" y="166">1 : N (user_id)</text>
+    <path d="M 940 100 L 765 100" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow-left)"/>
+    <circle cx="940" cy="100" r="3.5" fill="#0284C7"/>
+    <rect x="800" y="82" width="90" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="845" y="96">1 : N (user_id)</text>
   </g>
 
   <!-- Quan hệ 3: sensors (1) -> data_sensors (N) -->
   <g>
-    <path d="M 520 540 L 735 540" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
-    <circle cx="520" cy="540" r="3.5" fill="#0284C7"/>
-    <rect x="580" y="522" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
-    <text class="rel-badge-text" x="627.5" y="536">1 : N (sensor_id)</text>
+    <path d="M 520 445 L 735 445" stroke="#0284C7" stroke-width="2" marker-end="url(#relation-arrow)"/>
+    <circle cx="520" cy="445" r="3.5" fill="#0284C7"/>
+    <rect x="580" y="427" width="95" height="20" rx="10" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.2"/>
+    <text class="rel-badge-text" x="627.5" y="441">1 : N (sensor_id)</text>
   </g>
 
   <!-- ======================================================== -->
-  <!-- PHÂN HỆ 1: QUẢN LÝ THIẾT BỊ & ĐIỀU KHIỂN (ROW 1) -->
+  <!-- HÀNG 1: DEVICES - ACTIONS - USERS -->
   <!-- ======================================================== -->
-  <text class="cluster-title" x="50" y="98">PHÂN HỆ 1: QUẢN LÝ THIẾT BỊ, NGƯỜI DÙNG &amp; LỊCH SỬ ĐIỀU KHIỂN (DEVICES - ACTIONS - USERS)</text>
 
-  <!-- BẢNG 1: devices (X: 50, Y: 115) -->
-  <g transform="translate(50, 115)" filter="url(#table-shadow)">
+  <!-- BẢNG 1: devices (X: 50, Y: 45) -->
+  <g transform="translate(50, 45)" filter="url(#table-shadow)">
     <rect width="270" height="230" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
     <!-- Header -->
     <path d="M 0 8 A 8 8 0 0 1 8 0 L 262 0 A 8 8 0 0 1 270 8 L 270 42 L 0 42 Z" fill="#2563EB"/>
@@ -139,8 +129,8 @@
     </g>
   </g>
 
-  <!-- BẢNG 2: actions (X: 470, Y: 115) -->
-  <g transform="translate(470, 115)" filter="url(#table-shadow)">
+  <!-- BẢNG 2: actions (X: 470, Y: 45) -->
+  <g transform="translate(470, 45)" filter="url(#table-shadow)">
     <rect width="290" height="230" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
     <!-- Header -->
     <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#D97706"/>
@@ -203,8 +193,8 @@
     </g>
   </g>
 
-  <!-- BẢNG 3: users (X: 940, Y: 115) -->
-  <g transform="translate(940, 115)" filter="url(#table-shadow)">
+  <!-- BẢNG 3: users (X: 940, Y: 45) -->
+  <g transform="translate(940, 45)" filter="url(#table-shadow)">
     <rect width="270" height="255" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
     <!-- Header -->
     <path d="M 0 8 A 8 8 0 0 1 8 0 L 262 0 A 8 8 0 0 1 270 8 L 270 42 L 0 42 Z" fill="#7C3AED"/>
@@ -275,12 +265,11 @@
   </g>
 
   <!-- ======================================================== -->
-  <!-- PHÂN HỆ 2: THU THẬP DỮ LIỆU CẢM BIẾN (ROW 2) -->
+  <!-- HÀNG 2: SENSORS - DATA_SENSORS -->
   <!-- ======================================================== -->
-  <text class="cluster-title" x="50" y="420">PHÂN HỆ 2: DANH MỤC CẢM BIẾN &amp; LỊCH SỬ THU THẬP DỮ LIỆU (SENSORS - DATA_SENSORS)</text>
 
-  <!-- BẢNG 4: sensors (X: 230, Y: 435) -->
-  <g transform="translate(230, 435)" filter="url(#table-shadow)">
+  <!-- BẢNG 4: sensors (X: 230, Y: 340) -->
+  <g transform="translate(230, 340)" filter="url(#table-shadow)">
     <rect width="290" height="210" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
     <!-- Header -->
     <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#059669"/>
@@ -334,8 +323,8 @@
     </g>
   </g>
 
-  <!-- BẢNG 5: data_sensors (X: 740, Y: 435) -->
-  <g transform="translate(740, 435)" filter="url(#table-shadow)">
+  <!-- BẢNG 5: data_sensors (X: 740, Y: 340) -->
+  <g transform="translate(740, 340)" filter="url(#table-shadow)">
     <rect width="290" height="190" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
     <!-- Header -->
     <path d="M 0 8 A 8 8 0 0 1 8 0 L 282 0 A 8 8 0 0 1 290 8 L 290 42 L 0 42 Z" fill="#0891B2"/>
