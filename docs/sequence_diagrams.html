@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sơ Đồ Tuần Tự (Sequence Diagrams) - IoT Project</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+      color: #0f172a;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .tabs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      max-width: 1100px;
+    }
+    .tab-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+    }
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      text-decoration: none;
+    }
+    .btn:hover { background: #1e293b; }
+    .btn-blue { background: #2563eb; }
+    .btn-blue:hover { background: #1d4ed8; }
+    
+    .diagram-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      width: 100%;
+      max-width: 1150px;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 520px;
+      overflow-x: auto;
+    }
+    .diagram-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+      text-align: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      width: 100%;
+    }
+    .mermaid {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      background: #ffffff;
+    }
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+      background-color: #ffffff !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>SƠ ĐỒ TUẦN TỰ HỆ THỐNG IOT (SEQUENCE DIAGRAMS)</h1>
+    <p>Nền trắng chuẩn 100% (Pure White Background) • Độ phân giải cao • Sẵn sàng tải về đưa vào Báo cáo & Slide</p>
+  </div>
+
+  <!-- THANH CHỌN TAB USE CASE -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchUC('uc1')">UC-01: Xem dữ liệu môi trường</button>
+    <button class="tab-btn" onclick="switchUC('uc2')">UC-02: Điều khiển đèn</button>
+    <button class="tab-btn" onclick="switchUC('uc3')">UC-03: Lịch sử cảm biến & Điều khiển</button>
+    <button class="tab-btn" onclick="switchUC('uc4')">UC-04: Đăng nhập & Xác thực (RBAC)</button>
+    <button class="tab-btn" onclick="switchUC('uc5')">UC-05: Cảnh báo mất kết nối</button>
+    <button class="tab-btn" onclick="switchUC('uc6')">UC-06: Khôi phục trạng thái (F5)</button>
+  </div>
+
+  <!-- NÚT TẢI ẢNH -->
+  <div class="actions-bar">
+    <button class="btn btn-blue" onclick="downloadCurrentPNG()">📸 Tải ảnh PNG 2K nền trắng (cho Word/Báo cáo)</button>
+    <button class="btn" onclick="downloadCurrentSVG()">📐 Tải file Vector SVG</button>
+  </div>
+
+  <!-- KHUNG HIỂN THỊ DIAGRAM -->
+  <div class="diagram-card">
+    <div id="diagram-title" class="diagram-title">UC-01: Sơ đồ tuần tự Xem dữ liệu môi trường thời gian thực</div>
+    <div id="diagram-mount" class="mermaid"></div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        background: '#ffffff',
+        primaryColor: '#ffffff',
+        primaryBorderColor: '#334155',
+        primaryTextColor: '#0f172a',
+        secondaryColor: '#ffffff',
+        secondaryBorderColor: '#64748b',
+        secondaryTextColor: '#0f172a',
+        tertiaryColor: '#ffffff',
+        tertiaryBorderColor: '#94a3b8',
+        tertiaryTextColor: '#0f172a',
+        lineColor: '#1e293b',
+        signalColor: '#1e293b',
+        signalTextColor: '#0f172a',
+        labelBoxBkgColor: '#ffffff',
+        labelBoxBorderColor: '#64748b',
+        labelTextColor: '#0f172a',
+        loopTextColor: '#0f172a',
+        noteBkgColor: '#ffffff',
+        noteBorderColor: '#94a3b8',
+        noteTextColor: '#0f172a',
+        activationBkgColor: '#e2e8f0',
+        activationBorderColor: '#475569',
+        sequenceNumberColor: '#ffffff'
+      }
+    });
+
+    const ucDiagrams = {
+      uc1: {
+        title: "Hình 3.1: Sơ đồ tuần tự UC-01 – Xem dữ liệu môi trường thời gian thực",
+        filename: "Sequence_UC01_Xem_Du_Lieu_Moi_Truong",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng cuối
+    participant UI as Web Dashboard
+    participant Backend as Node-RED (API)
+    participant DB as MySQL (data_sensors)
+    participant Broker as Mosquitto MQTT Broker
+    participant MCU as NodeMCU ESP8266
+    participant Sensor as Cảm biến (DHT11 & LDR)
+
+    User->>UI: Mở Dashboard (http://localhost:8800/dashboard.html)
+    UI->>Backend: GET /api/dashboard/summary
+    Backend->>DB: SELECT dữ liệu mới nhất & 20 bản ghi gần nhất
+    DB-->>Backend: Kết quả truy vấn
+    Backend-->>UI: JSON { temp, hum, light, led1, led2, chart }
+    UI->>User: Hiển thị 3 Card số liệu & Biểu đồ Chart.js ban đầu
+
+    loop Định kỳ mỗi 5 giây (Chu kỳ đo cảm biến)
+        MCU->>Sensor: Đọc tín hiệu chân D2 (DHT11) và chân A0 (LDR)
+        Sensor-->>MCU: Giá trị nhiệt độ, độ ẩm, ánh sáng
+        
+        alt Đọc cảm biến thành công (Dữ liệu hợp lệ)
+            MCU->>Broker: Publish JSON lên topic "data/sensor" {"temp": ..., "hum": ..., "light": ...}
+            Broker->>Backend: Forward message "data/sensor"
+            Backend->>DB: INSERT INTO data_sensors (sensor_id, value, recorded_at) VALUES (1, temp), (2, hum), (3, light)
+            DB-->>Backend: Ghi thành công
+            Backend-->>UI: Cập nhật dữ liệu thời gian thực
+            UI->>User: Cập nhật 3 Card giá trị & đẩy điểm mới lên biểu đồ Chart.js
+        else Lỗi đọc cảm biến (DHT11 timeout hoặc trả về NaN)
+            MCU->>MCU: Bỏ qua chu kỳ đọc lỗi, ghi log Serial
+        end
+    end
+
+    alt Quá 10 giây không có dữ liệu từ NodeMCU
+        UI->>UI: Kiểm tra (now - last_received_time > 10000ms)
+        UI->>User: Kích hoạt thanh cảnh báo đỏ: "Mất kết nối với thiết bị NodeMCU ESP8266!"
+    end`
+      },
+      uc2: {
+        title: "Hình 3.2: Sơ đồ tuần tự UC-02 – Điều khiển đèn (LED 1 & LED 2)",
+        filename: "Sequence_UC02_Dieu_Khien_Den",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng (Admin / User)
+    participant UI as Web Dashboard
+    participant Backend as Node-RED (REST API & MQTT)
+    participant DB as MySQL (devices & actions)
+    participant Broker as Mosquitto MQTT Broker
+    participant MCU as NodeMCU ESP8266
+    participant LED as Đèn LED (LED 1 / LED 2)
+
+    User->>UI: Nhấp công tắc Bật Đèn 1 (LED 1)
+    
+    alt Kiểm tra quyền: Role = 'viewer'
+        UI->>User: Vô hiệu hóa công tắc (Khóa thao tác điều khiển)
+    else Kiểm tra quyền: Role in ['admin', 'user']
+        UI->>UI: Khóa tạm thời nút bấm (Chống spam click)
+        UI->>Backend: POST /api/control {"device": "led1", "action": "ON"} (Bearer Token)
+        Backend->>Backend: Xác thực Token & Phân quyền hợp lệ
+        Backend->>DB: INSERT INTO actions (device_id, user_id, action, status, time) VALUES (1, 1, 'led1:ON', 'pending', NOW())
+        DB-->>Backend: Trả về action_id
+        Backend->>Broker: Publish "ON" tới topic "device/control/led1" (QoS 1)
+        Broker->>MCU: Forward payload "ON" (topic device/control/led1)
+        
+        alt NodeMCU Online & Thực thi thành công
+            MCU->>LED: Xuất mức HIGH ra chân D5 (GPIO14)
+            LED-->>MCU: Đèn LED 1 sáng vật lý
+            MCU->>Broker: Publish JSON {"id": action_id, "device": "led1", "state": "ON", "status": "success"} tới "device/response"
+            Broker->>Backend: Forward message "device/response"
+            Backend->>Backend: Tính độ trễ response_ms = time_response - time
+            Backend->>DB: UPDATE actions SET status = 'success', time_response = NOW() WHERE action_id = ...
+            Backend->>DB: UPDATE devices SET status = 'on', updated_at = NOW() WHERE device_code = 'led1'
+            Backend-->>UI: HTTP 200 { ok: true, device: "led1", action: "ON", status: "success", response_ms: 45 }
+            UI->>User: Cập nhật công tắc BẬT (Xanh), hiển thị badge 45ms, nạp lại Action History
+        else NodeMCU Offline / Mất kết nối (Timeout > 3000ms)
+            Backend->>Backend: Hết thời gian chờ phản hồi (Timeout)
+            Backend->>DB: UPDATE actions SET status = 'timeout' WHERE action_id = ...
+            Backend-->>UI: HTTP 504 { ok: false, error: "Thiết bị không phản hồi (Timeout)" }
+            UI->>User: Trả công tắc về trạng thái cũ, hiển thị thông báo lỗi
+        end
+    end`
+      },
+      uc3: {
+        title: "Hình 3.3: Sơ đồ tuần tự UC-03 – Xem lịch sử dữ liệu cảm biến & Lịch sử điều khiển",
+        filename: "Sequence_UC03_Xem_Lich_Su_DataSensor_ActionHistory",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng (Admin / User)
+    participant UI as Web Dashboard
+    participant Backend as Node-RED (REST API)
+    participant DB as MySQL (iot_project)
+
+    rect rgb(255, 255, 255)
+        note over User,DB: PHÂN HỆ 1: TRA CỨU DỮ LIỆU CẢM BIẾN (DATA SENSOR)
+        User->>UI: Nhấp chọn menu "Data Sensor"
+        UI->>Backend: GET /api/sensors?page=1&limit=10 (Bearer Token)
+        Backend->>Backend: Kiểm tra Token & Xác thực quyền (Admin/User)
+        Backend->>DB: SELECT COUNT(*) FROM data_sensors
+        DB-->>Backend: Tổng số bản ghi (total)
+        Backend->>DB: SELECT d.data_id, s.sensor_name, d.value, s.unit, d.recorded_at<br/>FROM data_sensors d JOIN sensors s ON d.sensor_id = s.sensor_id<br/>ORDER BY d.data_id DESC LIMIT 10 OFFSET 0
+        DB-->>Backend: Danh sách 10 bản ghi đo đạc
+        Backend-->>UI: JSON { ok: true, page: 1, limit: 10, total: 2450, totalPages: 245, data: [...] }
+        UI->>User: Hiển thị bảng số liệu cảm biến kèm thanh phân trang
+
+        User->>UI: Chọn lọc "Loại cảm biến: Độ ẩm" hoặc nhập từ khóa tìm kiếm
+        UI->>Backend: GET /api/sensors?sensor=dht11_hum&page=1&limit=10
+        Backend->>DB: Truy vấn lọc dữ liệu theo sensor_id = 2
+        DB-->>Backend: Danh sách kết quả lọc
+        Backend-->>UI: JSON danh sách dữ liệu độ ẩm đã lọc
+        UI->>User: Cập nhật bảng dữ liệu độ ẩm và số trang tương ứng
+    end
+
+    rect rgb(255, 255, 255)
+        note over User,DB: PHÂN HỆ 2: TRA CỨU LỊCH SỬ ĐIỀU KHIỂN (ACTION HISTORY)
+        User->>UI: Nhấp chọn menu "Action history"
+        UI->>Backend: GET /api/actions?page=1&limit=10 (Bearer Token)
+        Backend->>Backend: Kiểm tra Token & Xác thực quyền (Admin/User)
+        Backend->>DB: SELECT COUNT(*) FROM actions
+        DB-->>Backend: Tổng số bản ghi lịch sử (total)
+        Backend->>DB: SELECT a.action_id, d.device_name, a.action, a.status, a.time, a.time_response, a.response_ms, u.full_name<br/>FROM actions a LEFT JOIN devices d ON a.device_id = d.device_id<br/>LEFT JOIN users u ON a.user_id = u.user_id<br/>ORDER BY a.action_id DESC LIMIT 10 OFFSET 0
+        DB-->>Backend: Danh sách 10 bản ghi lịch sử điều khiển
+        Backend-->>UI: JSON { ok: true, page: 1, limit: 10, total: 320, totalPages: 32, data: [...] }
+        UI->>User: Hiển thị bảng Action History: Badge Thành công (Xanh), Timeout (Đỏ), độ trễ (ms)
+
+        User->>UI: Lọc theo "Thiết bị: Đèn 2" + "Hành động: Bật"
+        UI->>Backend: GET /api/actions?device=led2&action=ON&page=1&limit=10
+        Backend->>DB: Truy vấn lọc lịch sử theo điều kiện
+        DB-->>Backend: Danh sách kết quả thỏa mãn
+        Backend-->>UI: JSON dữ liệu lịch sử đã lọc
+        UI->>User: Cập nhật bảng lịch sử điều khiển theo bộ lọc
+    end`
+      },
+      uc4: {
+        title: "Hình 3.4: Sơ đồ tuần tự UC-04 – Đăng nhập & Xác thực hệ thống (RBAC)",
+        filename: "Sequence_UC04_Dang_Nhap_Xac_Thuc_RBAC",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng
+    participant UI as Web Dashboard
+    participant Backend as Node-RED (Auth API)
+    participant DB as MySQL (users table)
+
+    User->>UI: Nhấp nút "Đăng nhập" trên thanh Sidebar
+    UI->>User: Hiển thị Modal Đăng nhập (Username, Password)
+    User->>UI: Nhập tên đăng nhập & mật khẩu, bấm Submit
+    UI->>Backend: POST /api/login {"username": "admin", "password": "..."}
+    
+    Backend->>Backend: Kiểm tra tính hợp lệ dữ liệu
+    Backend->>DB: SELECT user_id, username, password, full_name, role, status FROM users WHERE username = ? LIMIT 1
+    DB-->>Backend: Bản ghi người dùng
+
+    alt Tên đăng nhập không tồn tại
+        Backend-->>UI: HTTP 401 { ok: false, error: "Tên đăng nhập không tồn tại" }
+        UI->>User: Hiển thị thông báo lỗi màu đỏ trên modal
+    else Mật khẩu không chính xác
+        Backend-->>UI: HTTP 401 { ok: false, error: "Mật khẩu không chính xác" }
+        UI->>User: Hiển thị thông báo: "Mật khẩu không chính xác"
+    else Tài khoản bị khóa (status = 0)
+        Backend-->>UI: HTTP 403 { ok: false, error: "Tài khoản đang bị khóa" }
+        UI->>User: Hiển thị cảnh báo tài khoản bị khóa
+    else Xác thực thành công (Khớp mật khẩu & status = 1)
+        Backend->>Backend: Sinh chuỗi Token ngẫu nhiên (dạng iot_...)
+        Backend->>Backend: Lưu phiên làm việc vào global.sessions[token]
+        Backend-->>UI: HTTP 200 { ok: true, token: "iot_...", user: { username, full_name, role } }
+        UI->>UI: Lưu token & user vào localStorage (iot_token, iot_user)
+        UI->>UI: Ẩn Modal đăng nhập, cập nhật Sidebar (Tên, Badge Role)
+        
+        alt Vai trò là Admin hoặc User
+            UI->>User: Mở khóa các công tắc điều khiển đèn LED 1, LED 2 & Hiển thị đủ các tab
+        else Vai trò là Viewer
+            UI->>User: Khóa toàn bộ công tắc điều khiển đèn & Ẩn các tab DataSensor, ActionHistory, Profile
+        end
+    end
+
+    opt Đăng xuất hệ thống (UC-Logout)
+        User->>UI: Bấm nút "Đăng xuất"
+        UI->>Backend: POST /api/logout (Authorization: Bearer <token>)
+        Backend->>Backend: Xóa token khỏi global.sessions
+        Backend-->>UI: HTTP 200 { ok: true, message: "Đăng xuất thành công" }
+        UI->>UI: Xóa sạch iot_token & iot_user khỏi localStorage
+        UI->>User: Chuyển về quyền xem Viewer mặc định, khóa công tắc điều khiển
+    end`
+      },
+      uc5: {
+        title: "Hình 3.5: Sơ đồ tuần tự UC-05 – Thông báo lỗi khi mất kết nối NodeMCU",
+        filename: "Sequence_UC05_Canh_Bao_Mat_Ket_Noi_NodeMCU",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng
+    participant UI as Web Dashboard
+    participant Backend as Node-RED Backend
+    participant Broker as Mosquitto MQTT Broker
+    participant MCU as NodeMCU ESP8266
+
+    note over MCU,Broker: Trạng thái bình thường: NodeMCU gửi dữ liệu mỗi 5s
+    MCU->>Broker: Publish topic "data/sensor" (Nhiệt độ, Độ ẩm, Ánh sáng)
+    Broker->>Backend: Chuyển tiếp message cảm biến
+    Backend-->>UI: Cung cấp dữ liệu đo mới nhất
+    UI->>UI: Cập nhật mốc thời gian: lastReceivedTime = Date.now()
+    UI->>User: Hiển thị số liệu bình thường, ẩn thanh cảnh báo đỏ
+
+    note over MCU: SỰ CỐ: Mất điện nguồn hoặc đứt kết nối WiFi/MQTT
+    MCU-xBroker: Ngừng gửi dữ liệu lên MQTT Broker
+
+    loop Bộ đếm giám sát Timer (Chạy mỗi 2 giây)
+        UI->>UI: Tính chênh lệch: timeDiff = Date.now() - lastReceivedTime
+        alt timeDiff > 10.000 ms (Quá 10 giây không có dữ liệu mới)
+            UI->>UI: Gỡ bỏ class 'hidden' tại #nodemcu-disconnect-alert
+            UI->>User: Hiển thị thanh cảnh báo đỏ (nhấp nháy animate-pulse):<br/>"Cảnh báo: Mất kết nối với thiết bị NodeMCU ESP8266!"
+        end
+    end
+
+    note over MCU: KHẮC PHỤC: Cấp lại nguồn / NodeMCU kết nối lại WiFi
+    MCU->>Broker: Tái kết nối MQTT Broker & Publish gói tin "data/sensor" mới
+    Broker->>Backend: Chuyển tiếp message cảm biến mới
+    Backend-->>UI: Cung cấp dữ liệu mới nhất
+    UI->>UI: Cập nhật: lastReceivedTime = Date.now()
+    UI->>UI: Phát hiện timeDiff <= 10.000 ms -> Thêm lại class 'hidden'
+    UI->>User: Tự động ẩn thanh cảnh báo đỏ, tiếp tục cập nhật dữ liệu bình thường`
+      },
+      uc6: {
+        title: "Hình 3.6: Sơ đồ tuần tự UC-06 – Khôi phục dữ liệu và trạng thái đèn khi tải lại trang",
+        filename: "Sequence_UC06_Khoi_Phuc_Trang_Thai_Khi_Tai_Lai_Trang",
+        code: `sequenceDiagram
+    autonumber
+    actor User as Người dùng
+    participant Browser as Trình duyệt (localStorage / Hash)
+    participant UI as Web Dashboard JS Engine
+    participant Backend as Node-RED (/api/dashboard/summary)
+    participant DB as MySQL (devices & data_sensors)
+
+    User->>Browser: Nhấn F5 (Tải lại trang)
+    Browser->>UI: Khởi chạy mã JavaScript trang dashboard.html
+
+    rect rgb(255, 255, 255)
+        note over UI,Browser: 1. Khôi phục phiên đăng nhập (0ms)
+        UI->>Browser: Đọc localStorage.getItem('iot_token') & ('iot_user')
+        Browser-->>UI: Trả về token và thông tin User hiện tại
+        UI->>UI: Cập nhật Sidebar: Tên người dùng & Badge quyền hạn (Admin/User/Viewer)
+    end
+
+    rect rgb(255, 255, 255)
+        note over UI,DB: 2. Khôi phục trạng thái Đèn & Dữ liệu Cảm biến/Biểu đồ
+        UI->>Backend: GET /api/dashboard/summary
+        Backend->>DB: SELECT device_code, status FROM devices WHERE device_code IN ('led1', 'led2')
+        DB-->>Backend: led1 = 'on', led2 = 'off'
+        Backend->>DB: SELECT sensor_id, value, recorded_at FROM data_sensors ORDER BY data_id DESC LIMIT 60
+        DB-->>Backend: Dữ liệu đo mới nhất & 20 mốc thời gian gần nhất của 3 cảm biến
+        Backend-->>UI: JSON { temp: 28.5, hum: 65, light: 520, led1: "ON", led2: "OFF", chart: {...} }
+        UI->>UI: Thiết lập công tắc Đèn 1 = BẬT (Xanh), Đèn 2 = TẮT (Xám)
+        UI->>UI: Điền số liệu vào 3 Card: 28.5°C, 65%, 520 lux
+        UI->>UI: Nạp mảng lịch sử vào Chart.js và vẽ lại toàn bộ đường biểu đồ
+    end
+
+    rect rgb(255, 255, 255)
+        note over UI,Browser: 3. Khôi phục Tab đang thao tác dở dang
+        UI->>Browser: Đọc window.location.hash || localStorage.getItem('iot_active_tab')
+        Browser-->>UI: Trả về tab đã lưu (ví dụ: 'datasensor')
+        alt Tab đã lưu khác 'dashboard'
+            UI->>UI: switchTab('datasensor')
+            UI->>Backend: GET /api/sensors?page=1&limit=10
+            Backend-->>UI: Dữ liệu bảng Data Sensor
+            UI->>User: Mở ngay tab Data Sensor với bảng dữ liệu hoàn chỉnh
+        else Tab mặc định là 'dashboard'
+            UI->>User: Hiển thị màn hình chính Dashboard hoàn chỉnh
+        end
+    end`
+      }
+    };
+
+    let currentUCKey = 'uc1';
+
+    async function switchUC(key) {
+      currentUCKey = key;
+      document.querySelectorAll('.tab-btn').forEach((b, idx) => {
+        b.classList.toggle('active', Object.keys(ucDiagrams)[idx] === key);
+      });
+      
+      const item = ucDiagrams[key];
+      document.getElementById('diagram-title').textContent = item.title;
+      
+      const mount = document.getElementById('diagram-mount');
+      mount.innerHTML = '';
+      
+      const { svg } = await mermaid.render('mermaid-svg-' + key, item.code);
+      mount.innerHTML = svg;
+
+      // Đảm bảo nền SVG luôn là màu trắng thuần
+      const svgEl = mount.querySelector('svg');
+      if (svgEl) {
+        svgEl.style.backgroundColor = '#ffffff';
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("width", "100%");
+        rect.setAttribute("height", "100%");
+        rect.setAttribute("fill", "#ffffff");
+        svgEl.insertBefore(rect, svgEl.firstChild);
+      }
+    }
+
+    // Khởi tạo hiển thị tab đầu tiên
+    switchUC('uc1');
+
+    function downloadCurrentSVG() {
+      const mount = document.getElementById('diagram-mount');
+      const svgEl = mount.querySelector('svg');
+      if (!svgEl) return;
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const a = document.createElement('a');
+      a.href = svgUrl;
+      a.download = ucDiagrams[currentUCKey].filename + '.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function downloadCurrentPNG() {
+      const mount = document.getElementById('diagram-mount');
+      const svgEl = mount.querySelector('svg');
+      if (!svgEl) return;
+
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const URLObj = window.URL || window.webkitURL || window;
+      const blobURL = URLObj.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = () => {
+        const scale = 2.5; // Độ phân giải 2.5x siêu sắc nét
+        const canvas = document.createElement('canvas');
+        canvas.width = (svgEl.viewBox.baseVal.width || svgEl.scrollWidth || 1000) * scale;
+        canvas.height = (svgEl.viewBox.baseVal.height || svgEl.scrollHeight || 800) * scale;
+        
+        const ctx = canvas.getContext('2d');
+        // Nền trắng thuần
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const pngURL = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = pngURL;
+        a.download = ucDiagrams[currentUCKey].filename + '_2K.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+      img.src = blobURL;
+    }
+  </script>
+</body>
+</html>
