@@ -1498,8 +1498,8 @@
             const localData = filterAndPaginateSensors(dsState.page, dsState.pageSize, dsState.search, dsState.type);
             renderSensorsUI(localData);
 
-            // 2. NẾU CÓ SERVER, ĐỒNG BỘ NỀN NHẸ NHÀNG
-            if (!isFileProtocol) {
+            // 2. NẾU CÓ SERVER VÀ ĐÃ ĐĂNG NHẬP, ĐỒNG BỘ NỀN VỚI TOKEN
+            if (!isFileProtocol && getAuthToken()) {
                 const paramObj = {
                     page: dsState.page,
                     pageSize: dsState.pageSize,
@@ -1614,8 +1614,8 @@
             const localData = filterAndPaginateActions(ahState.page, ahState.pageSize, ahState.time, ahState.device, ahState.action, ahState.status);
             renderActionsUI(localData);
 
-            // 2. NẾU CÓ SERVER, ĐỒNG BỘ NỀN NHẸ NHÀNG
-            if (!isFileProtocol) {
+            // 2. NẾU CÓ SERVER VÀ ĐÃ ĐĂNG NHẬP, ĐỒNG BỘ NỀN VỚI TOKEN
+            if (!isFileProtocol && getAuthToken()) {
                 const params = new URLSearchParams({
                     page: ahState.page, pageSize: ahState.pageSize, time: ahState.time,
                     device: ahState.device, action: ahState.action, status: ahState.status
