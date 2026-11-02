@@ -27,9 +27,9 @@ Cấu trúc 5 bảng chuẩn theo ERD và các mối liên hệ:
    - Bảng `data_sensors`: Lưu lịch sử đo đạc từ cảm biến (`sensor_id` FK -> `sensors`, giá trị `value`, thời gian `recorded_at`).
 
 ## 4. Tài khoản phân quyền mẫu
-- **Admin**: `admin` / `admin123` (Toàn quyền bật/tắt đèn, xem dashboard, datasensor, actionhistory).
-- **User**: `user` / `user123` (Quyền bật/tắt đèn, xem dashboard, datasensor, actionhistory).
-- **Viewer**: `viewer` / `viewer123` (Chỉ xem dữ liệu trên dashboard; không có quyền điều khiển đèn, không được xem datasensor, actionhistory, profile).
+- **Admin**: `admin` / `admin123` (Toàn quyền bật/tắt đèn, xem dashboard, datasensor, actionhistory, profile sinh viên).
+- **User**: `user` / `user123` (Quyền bật/tắt đèn, xem dashboard, datasensor, actionhistory; không xem profile sinh viên).
+- **Viewer**: Mặc định khi chưa đăng nhập / Khách vãng lai (Chỉ xem dữ liệu trên dashboard; không cần đăng nhập/không cần token; không có quyền điều khiển đèn, không được xem datasensor, actionhistory, profile).
 
 ## 5. Lệnh biên dịch & Nạp Firmware (PlatformIO)
 Khi chạy lệnh trong Antigravity IDE Terminal:

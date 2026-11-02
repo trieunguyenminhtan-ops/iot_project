@@ -92,14 +92,14 @@ Hãy thực hiện theo kịch bản mạch lạc sau để đạt điểm tối
      - *Thiết bị: `led1` / `led2`*
      - *Hành động: `ON` / `OFF`*
      - *Thời gian phản hồi từ mạch: `... ms`* (phản ánh độ trễ mạng thực tế).
-3. **Thử nghiệm phân quyền Viewer (Người xem):**
-   - Bấm nút **"Đổi sang Viewer"** ở thanh menu bên trái.
-   - Huy hiệu đổi sang màu xanh **`VIEWER`**, 2 công tắc đèn bị khóa mờ, hiện thông báo *"Chế độ chỉ xem"*.
-   - Thử bấm vào công tắc ➔ Hệ thống hiện cảnh báo: *"Chỉ tài khoản Admin mới có quyền điều khiển!"*.
-   - Bấm lại nút **"Đổi sang Admin"** để lấy lại toàn quyền.
+3. **Thử nghiệm phân quyền Viewer (Chế độ khách chỉ xem):**
+   - Bấm nút **"Đăng xuất"** màu đỏ ở góc dưới menu bên trái.
+   - Hệ thống tự động chuyển về chế độ Khách (Viewer): huy hiệu chuyển thành màu xám **`VIEWER`**, 2 công tắc đèn bị khóa mờ, các tab Data sensor, Action history, Profile bị hạn chế truy cập.
+   - Thử bấm vào công tắc ➔ Hệ thống hiện cảnh báo: *"Chỉ tài khoản Admin hoặc User mới có quyền điều khiển!"*.
+   - Bấm nút **"Đăng nhập"** màu xanh ➔ Đăng nhập lại `admin` / `admin123` hoặc `user` / `user123` để lấy lại quyền điều khiển.
 
 ### 🟢 Màn 4: Trang Profile sinh viên & Báo cáo đồ án (30 giây)
-- Bấm vào tab **"Profile"**.
+- Bấm vào tab **"Profile"** (chỉ Quản trị viên Admin mới có quyền truy cập Profile sinh viên "Triệu Nguyễn Minh Tân").
 - Hiển thị thông tin sinh viên, lớp, đề tài, các đường liên kết nộp bài (GitHub, Postman API Docs, Figma Prototype) và nút mở file Báo cáo PDF.
 
 ---
@@ -111,7 +111,7 @@ Hãy thực hiện theo kịch bản mạch lạc sau để đạt điểm tối
 | **URL Giao diện Web** | `http://localhost:8800/dashboard.html` |
 | **Tài khoản Admin** | `admin` / `admin123` (Toàn quyền bật/tắt thiết bị, xem Data sensor & Action history) |
 | **Tài khoản User** | `user` / `user123` (Quyền bật/tắt thiết bị, xem Data sensor & Action history) |
-| **Tài khoản Viewer** | `viewer` / `viewer123` (Chỉ xem Dashboard; không được điều khiển và không được xem Data sensor, Action history, Profile) |
+| **Tài khoản Viewer** | Mặc định khi chưa đăng nhập (Chỉ xem Dashboard; không cần token; không được điều khiển và không xem được Data sensor, Action history, Profile) |
 | **Mosquitto MQTT Broker** | Port `8000` (User: `b23dcat271` / Pass: `trieunguyenminhtan`) |
 | **Node-RED Backend** | Port `8800` (Chạy bằng file `scripts/windows/start-node-red.bat`) |
 | **Cơ sở dữ liệu MySQL** | Database: `iot_project` (User: `iot` / Pass: `iot123`) |
