@@ -7,7 +7,144 @@
     },
     "item": [
         {
-            "name": "1. Dashboard",
+            "name": "1. Đăng nhập & Xác thực",
+            "description": "Đăng nhập tài khoản Admin để cấp token xác thực tự động cho các thao tác điều khiển tiếp theo.",
+            "item": [
+                {
+                    "name": "POST /api/login (Admin)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"HTTP 200 - Đăng nhập Admin thành công\", function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.test(\"Trả về token và role admin\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.token).to.be.a(\"string\"); pm.expect(j.user.role).to.eql(\"admin\"); });",
+                                    "if (j.token) { pm.environment.set(\"token\", j.token); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        },
+                        "description": "Đăng nhập tài khoản Admin (toàn quyền điều khiển thiết bị, xem mọi màn hình và cấu hình hệ thống). Token sẽ tự động được lưu vào biến môi trường {{token}}."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET /api/me",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"HTTP 200 - Lấy thông tin user hiện tại\", function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.test(\"Trả về đúng session user\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.user).to.include.keys(\"user_id\", \"username\", \"role\"); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "me"
+                            ]
+                        },
+                        "description": "Lấy thông tin người dùng hiện tại từ session token Bearer."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST /api/login (User)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"HTTP 200 - Đăng nhập User thành công\", function () { pm.response.to.have.status(200); });",
+                                    "var j = pm.response.json();",
+                                    "pm.test(\"Trả về token và role user\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.token).to.be.a(\"string\"); pm.expect(j.user.role).to.eql(\"user\"); });",
+                                    "if (j.token) { pm.environment.set(\"user_token\", j.token); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        },
+                        "description": "Đăng nhập tài khoản Người dùng (User - toàn quyền bật tắt đèn, xem dashboard, datasensor, actionhistory). Token sẽ tự động được lưu vào biến môi trường {{token}}."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "2. Dashboard",
             "description": "Số liệu thời gian thực.",
             "item": [
                 {
@@ -78,7 +215,7 @@
             ]
         },
         {
-            "name": "2. Data sensor",
+            "name": "3. Data sensor",
             "description": "Dữ liệu cảm biến lưu trong bảng `data_sensors`.",
             "item": [
                 {
@@ -414,7 +551,7 @@
             ]
         },
         {
-            "name": "3. Action history",
+            "name": "4. Action history",
             "description": "Lịch sử điều khiển lưu trong bảng `actions`.",
             "item": [
                 {
@@ -665,8 +802,18 @@
             ]
         },
         {
-            "name": "4. Điều khiển thiết bị",
+            "name": "5. Điều khiển thiết bị",
             "description": "Bật/tắt đèn qua MQTT.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
             "item": [
                 {
                     "name": "Bật Đèn 1",
@@ -1060,21 +1207,11 @@
                     },
                     "response": []
                 }
-            ],
-            "auth": {
-                "type": "bearer",
-                "bearer": [
-                    {
-                        "key": "token",
-                        "value": "{{token}}",
-                        "type": "string"
-                    }
-                ]
-            }
+            ]
         },
         {
-            "name": "5. Profile",
-            "description": "API lấy thông tin sinh viên.",
+            "name": "6. Profile & Đăng xuất",
+            "description": "Xem hồ sơ sinh viên và đăng xuất kết thúc phiên làm việc.",
             "item": [
                 {
                     "name": "Thông tin sinh viên (từ bảng users)",
@@ -1138,190 +1275,6 @@
                             "body": "{\n  \"username\": \"B00DCXX000\",\n  \"full_name\": \"Nguyễn Văn A\",\n  \"email\": \"email@example.com\"\n}"
                         }
                     ]
-                }
-            ]
-        },
-        {
-            "name": "6. Xác thực & Phân quyền",
-            "description": "API đăng nhập (3 Role: admin, user, viewer), lấy thông tin cá nhân và đăng xuất.",
-            "item": [
-                {
-                    "name": "POST /api/login (Admin)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"HTTP 200 - Đăng nhập Admin thành công\", function () { pm.response.to.have.status(200); });",
-                                    "var j = pm.response.json();",
-                                    "pm.test(\"Trả về token và role admin\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.token).to.be.a(\"string\"); pm.expect(j.user.role).to.eql(\"admin\"); });",
-                                    "if (j.token) { pm.environment.set(\"token\", j.token); }"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "login"
-                            ]
-                        },
-                        "description": "Đăng nhập tài khoản Admin (toàn quyền điều khiển thiết bị, xem mọi màn hình và cấu hình hệ thống). Token sẽ tự động được lưu vào biến môi trường {{token}}."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "POST /api/login (User)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"HTTP 200 - Đăng nhập User thành công\", function () { pm.response.to.have.status(200); });",
-                                    "var j = pm.response.json();",
-                                    "pm.test(\"Trả về token và role user\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.token).to.be.a(\"string\"); pm.expect(j.user.role).to.eql(\"user\"); });",
-                                    "if (j.token) { pm.environment.set(\"token\", j.token); }"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "login"
-                            ]
-                        },
-                        "description": "Đăng nhập tài khoản Người dùng (User - toàn quyền bật tắt đèn, xem dashboard, datasensor, actionhistory). Token sẽ tự động được lưu vào biến môi trường {{token}}."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "POST /api/login (Viewer)",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"HTTP 200 - Đăng nhập Viewer thành công\", function () { pm.response.to.have.status(200); });",
-                                    "var j = pm.response.json();",
-                                    "pm.test(\"Trả về token và role viewer\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.token).to.be.a(\"string\"); pm.expect(j.user.role).to.eql(\"viewer\"); });",
-                                    "if (j.token) { pm.environment.set(\"token\", j.token); }"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"username\": \"viewer\",\n  \"password\": \"viewer123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "login"
-                            ]
-                        },
-                        "description": "Đăng nhập tài khoản Viewer (chỉ xem Dashboard; bị chặn điều khiển đèn và không được xem dữ liệu bảng khác). Token sẽ tự động được lưu vào biến môi trường {{token}}."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "GET /api/me",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "type": "text/javascript",
-                                "exec": [
-                                    "pm.test(\"HTTP 200 - Lấy thông tin user hiện tại\", function () { pm.response.to.have.status(200); });",
-                                    "var j = pm.response.json();",
-                                    "pm.test(\"Trả về đúng session user\", function () { pm.expect(j.ok).to.eql(true); pm.expect(j.user).to.include.keys(\"user_id\", \"username\", \"role\"); });"
-                                ]
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/api/me",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "me"
-                            ]
-                        },
-                        "description": "Lấy thông tin người dùng hiện tại từ session token Bearer."
-                    },
-                    "response": []
                 },
                 {
                     "name": "POST /api/logout",
