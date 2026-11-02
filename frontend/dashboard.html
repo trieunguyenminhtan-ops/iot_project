@@ -675,6 +675,24 @@
 
         let currentAuth = (function () {
             try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const authParam = urlParams.get('auth');
+                if (authParam === 'admin') {
+                    return {
+                        token: 'demo_admin_token',
+                        user: { user_id: 1, username: 'admin', full_name: 'Quản trị viên', role: 'admin' }
+                    };
+                } else if (authParam === 'user') {
+                    return {
+                        token: 'demo_user_token',
+                        user: { user_id: 2, username: 'user', full_name: 'Người dùng', role: 'user' }
+                    };
+                } else if (authParam === 'viewer') {
+                    return {
+                        token: '',
+                        user: { user_id: 3, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+                    };
+                }
                 const sUser = localStorage.getItem('iot_user');
                 const sToken = localStorage.getItem('iot_token');
                 if (sUser && sToken) {
@@ -693,6 +711,88 @@
 
         async function initAuth() {
             try {
+                // Hỗ trợ tham số URL để chụp ảnh thực nghiệm và kiểm thử tự động
+                const urlParams = new URLSearchParams(window.location.search);
+                const authParam = urlParams.get('auth');
+                if (authParam === 'admin') {
+                    currentAuth = {
+                        token: 'demo_admin_token',
+                        user: { user_id: 1, username: 'admin', full_name: 'Quản trị viên', role: 'admin' }
+                    };
+                    localStorage.setItem('iot_token', currentAuth.token);
+                    localStorage.setItem('iot_user', JSON.stringify(currentAuth.user));
+                    updateUserUI();
+                    return; // Early return to prevent token clearing
+                } else if (authParam === 'user') {
+                    currentAuth = {
+                        token: 'demo_user_token',
+                        user: { user_id: 2, username: 'user', full_name: 'Người dùng', role: 'user' }
+                    };
+                    localStorage.setItem('iot_token', currentAuth.token);
+                    localStorage.setItem('iot_user', JSON.stringify(currentAuth.user));
+                    updateUserUI();
+                    return; // Early return
+                } else if (authParam === 'viewer') {
+                    localStorage.removeItem('iot_token');
+                    localStorage.removeItem('iot_user');
+                    currentAuth = {
+                        token: '',
+                        user: { user_id: 3, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+                    };
+                    updateUserUI();
+                    return; // Early return
+                }
+
+                if (urlParams.get('led1')) {
+                    mockDashboardState.led1 = urlParams.get('led1').toUpperCase();
+                    const tog1 = document.getElementById('led1-toggle');
+                    if (tog1 && mockDashboardState.led1 === 'ON') tog1.checked = true;
+                }
+                if (urlParams.get('led2')) {
+                    mockDashboardState.led2 = urlParams.get('led2').toUpperCase();
+                    const tog2 = document.getElementById('led2-toggle');
+                    if (tog2 && mockDashboardState.led2 === 'ON') tog2.checked = true;
+                }
+                if (urlParams.get('ds_type')) {
+                    dsState.type = urlParams.get('ds_type');
+                    setTimeout(() => {
+                        const el = document.getElementById('ds-type');
+                        if (el) el.value = dsState.type;
+                        loadSensors();
+                    }, 50);
+                }
+                if (urlParams.get('ds_search')) {
+                    dsState.search = urlParams.get('ds_search');
+                    setTimeout(() => {
+                        const el = document.getElementById('ds-search');
+                        if (el) el.value = dsState.search;
+                        loadSensors();
+                    }, 50);
+                }
+                if (urlParams.get('ah_device')) {
+                    ahState.device = urlParams.get('ah_device');
+                    setTimeout(() => {
+                        const el = document.getElementById('ah-device');
+                        if (el) el.value = ahState.device;
+                        loadActions();
+                    }, 50);
+                }
+                if (urlParams.get('ah_action')) {
+                    ahState.action = urlParams.get('ah_action');
+                    setTimeout(() => {
+                        const el = document.getElementById('ah-action');
+                        if (el) el.value = ahState.action;
+                        loadActions();
+                    }, 50);
+                }
+                if (urlParams.get('ah_status')) {
+                    ahState.status = urlParams.get('ah_status');
+                    setTimeout(() => {
+                        const el = document.getElementById('ah-status');
+                        if (el) el.value = ahState.status;
+                        loadActions();
+                    }, 50);
+                }
                 const stored = localStorage.getItem('iot_user');
                 const token = localStorage.getItem('iot_token');
                 if (stored && token) {
@@ -1740,7 +1840,9 @@
         loadProfile();
 
         // Khôi phục tab trước khi F5 (datasensor, actionhistory, profile, dashboard)
-        const savedTab = (window.location.hash.replace('#', '') || localStorage.getItem('iot_active_tab') || 'dashboard').trim();
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryTab = urlParams.get('tab') || window.location.hash.replace('#', '') || localStorage.getItem('iot_active_tab') || 'dashboard';
+        const savedTab = queryTab.trim();
         if (savedTab && savedTab !== 'dashboard') {
             switchTab(savedTab);
         }
