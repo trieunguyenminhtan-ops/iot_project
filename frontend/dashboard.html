@@ -1827,6 +1827,43 @@
         // KHỞI ĐỘNG: NẠP VÀ HIỂN THỊ ĐẦY ĐỦ NGAY LẬP TỨC (0ms)
         // ===============================================================
         initAuth();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('role')) {
+            const r = urlParams.get('role');
+            if (r === 'admin') {
+                currentAuth = {
+                    token: 'demo_admin_token',
+                    user: { user_id: 1, username: 'admin', full_name: 'Quản trị viên', role: 'admin' }
+                };
+            } else if (r === 'user') {
+                currentAuth = {
+                    token: 'demo_user_token',
+                    user: { user_id: 2, username: 'user', full_name: 'Người dùng', role: 'user' }
+                };
+            } else if (r === 'viewer') {
+                currentAuth = {
+                    token: '',
+                    user: { user_id: 3, username: 'viewer', full_name: 'Người xem', role: 'viewer' }
+                };
+            }
+            try {
+                localStorage.setItem('iot_user', JSON.stringify(currentAuth.user));
+                localStorage.setItem('iot_token', currentAuth.token);
+            } catch (e) { }
+        }
+
+        if (urlParams.has('led1')) {
+            mockDashboardState.led1 = urlParams.get('led1').toUpperCase();
+            try { localStorage.setItem('iot_led1', mockDashboardState.led1); } catch (e) { }
+        }
+        if (urlParams.has('led2')) {
+            mockDashboardState.led2 = urlParams.get('led2').toUpperCase();
+            try { localStorage.setItem('iot_led2', mockDashboardState.led2); } catch (e) { }
+        }
+
+        updateUserUI();
+
         renderDashboardUI({
             temp: mockDashboardState.temp,
             hum: mockDashboardState.hum,
@@ -1840,11 +1877,31 @@
         loadProfile();
 
         // Khôi phục tab trước khi F5 (datasensor, actionhistory, profile, dashboard)
-        const urlParams = new URLSearchParams(window.location.search);
         const queryTab = urlParams.get('tab') || window.location.hash.replace('#', '') || localStorage.getItem('iot_active_tab') || 'dashboard';
         const savedTab = queryTab.trim();
+        document.title = "TAB_" + savedTab + "_ROLE_" + (currentAuth && currentAuth.user ? currentAuth.user.role : "none");
         if (savedTab && savedTab !== 'dashboard') {
             switchTab(savedTab);
+        }
+
+        if (savedTab === 'datasensor') {
+            if (urlParams.has('type')) {
+                const el = document.getElementById('ds-type');
+                if (el) { el.value = urlParams.get('type'); applyDsSearch(); }
+            }
+            if (urlParams.has('search')) {
+                const el = document.getElementById('ds-search');
+                if (el) { el.value = urlParams.get('search'); applyDsSearch(); }
+            }
+        } else if (savedTab === 'actionhistory') {
+            if (urlParams.has('device')) { const el = document.getElementById('ah-device'); if (el) el.value = urlParams.get('device'); }
+            if (urlParams.has('action')) { const el = document.getElementById('ah-action'); if (el) el.value = urlParams.get('action'); }
+            if (urlParams.has('status')) { const el = document.getElementById('ah-status'); if (el) el.value = urlParams.get('status'); }
+            applyAhSearch();
+        }
+
+        if (urlParams.has('toast')) {
+            showToast(urlParams.get('toast'), 'warning');
         }
 
         // Tự động kiểm tra / làm mới định kỳ mỗi 5 giây

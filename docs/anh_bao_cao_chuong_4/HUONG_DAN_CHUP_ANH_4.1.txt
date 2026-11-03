@@ -1,0 +1,19 @@
+========================================================================
+HƯỚNG DẪN BỔ SUNG HÌNH 4.1: ẢNH CHỤP MẠCH PHẦN CỨNG THỰC TẾ
+========================================================================
+
+Thư mục: docs/anh_bao_cao_chuong_4/
+Tên file cần lưu: Hinh_4.1_Phan_cung_mach_thuc_te.jpg (hoặc .png)
+
+Cách thực hiện:
+1. Bạn dùng điện thoại chụp trực tiếp mô hình mạch thật đang cắm trên bàn:
+   - Bo mạch NodeMCU ESP8266 cắm trên Breadboard.
+   - Cảm biến nhiệt độ & độ ẩm DHT11 (nối chân D2).
+   - Quang trở LDR (nối chân A0).
+   - 2 đèn LED 1 và 2 (nối chân D5, D6 qua 2 điện trở 220 Ohm).
+   - Dây cáp micro-USB nối từ máy tính cấp nguồn.
+2. Chép ảnh chụp từ điện thoại vào thư mục này và đặt tên là:
+   Hinh_4.1_Phan_cung_mach_thuc_te.jpg
+
+Sau đó bạn có thể chèn ảnh này vào mục 4.2.1 trong báo cáo Word!
+========================================================================
