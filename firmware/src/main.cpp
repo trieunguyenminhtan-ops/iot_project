@@ -107,6 +107,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
       msg = msg.substring(1, msg.length() - 1);
       msg.trim();
     }
+    msg.replace("'", "\"");
+
     StaticJsonDocument<128> doc;
     DeserializationError err = deserializeJson(doc, msg);
     if (err) {
