@@ -102,6 +102,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   } else if (t == topic_control_led2) {
     applyLedCommand(DEVICE_ID_LED2, LED2_PIN, "led2", msg);
   } else if (t == topic_control_all) {
+    msg.trim();
+    if (msg.startsWith("'") && msg.endsWith("'")) {
+      msg = msg.substring(1, msg.length() - 1);
+      msg.trim();
+    }
     StaticJsonDocument<128> doc;
     DeserializationError err = deserializeJson(doc, msg);
     if (err) {
