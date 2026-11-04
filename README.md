@@ -36,26 +36,28 @@ flowchart TD
 
     subgraph Middleware_Layer ["3. Lớp Xử lý Trung tâm (Backend Layer)"]
         NodeRED["Node-RED Runtime v3.x<br/>(Port 8800 · REST API & Web Server)"]
-        MySQL[("Cơ sở dữ liệu: MySQL 8.0<br/>Database: iot_project (5 bảng)")]
+        DB["Cơ sở dữ liệu: MySQL 8.0<br/>(Database: iot_project - 5 bảng)"]
     end
 
     subgraph Application_Layer ["4. Lớp Ứng dụng & Trực quan (Application Layer)"]
-        SPA["Giao diện Web SPA (dashboard.html)<br/>HTML5 · Tailwind CSS · Chart.js · Lucide Icons"]
+        SPA["Giao diện Web SPA (dashboard.html)<br/>(HTML5 · Tailwind CSS · Chart.js)"]
         Postman["Kiểm thử tự động Postman Runner<br/>(31 Requests · 66 Test Assertions)"]
     end
 
-    NodeMCU <-->|MQTT Publish/Subscribe| Broker
-    Broker <-->|MQTT in/out Nodes| NodeRED
-    NodeRED <-->|SQL Queries (mysql pool)| MySQL
+    NodeMCU <-->|MQTT Publish / Subscribe| Broker
+    Broker <-->|MQTT in / out Nodes| NodeRED
+    NodeRED <-->|SQL Queries / mysql pool| DB
     SPA <-->|HTTP REST Polling / POST Control| NodeRED
     Postman -->|REST API Testing & RBAC| NodeRED
 ```
 
-### Hai luồng dữ liệu cốt lõi:
-1. **Luồng thu thập dữ liệu (Telemetry Stream):**
-   $$\text{Cảm biến (DHT11, LDR)} \xrightarrow{\text{5s/lần}} \text{NodeMCU} \xrightarrow{\text{MQTT: data/sensor}} \text{Broker} \xrightarrow{} \text{Node-RED} \xrightarrow{\text{INSERT}} \text{MySQL} \xrightarrow{\text{GET /api/dashboard}} \text{Web SPA}$$
-2. **Luồng điều khiển thiết bị có phản hồi xác nhận (Control & ACK Stream):**
-   $$\text{Thao tác Web/API} \xrightarrow{\text{POST /api/control}} \text{Node-RED (actions: pending)} \xrightarrow{\text{MQTT}} \text{NodeMCU (thực thi)} \xrightarrow{\text{device/response}} \text{Node-RED (actions: success, response\_ms)} \xrightarrow{\text{ACK}} \text{Web SPA}$$
+### 🔄 Hai luồng dữ liệu cốt lõi:
+
+* **1. Luồng thu thập dữ liệu (Telemetry Stream):**
+  > `Cảm biến (DHT11, LDR)` ➔ *(định kỳ 5s/lần)* ➔ `NodeMCU ESP8266` ➔ *(MQTT: data/sensor)* ➔ `Mosquitto Broker` ➔ `Node-RED` ➔ *(INSERT SQL)* ➔ `MySQL` ➔ *(GET /api/dashboard)* ➔ `Web SPA (Card & Chart)`
+
+* **2. Luồng điều khiển thiết bị có phản hồi xác nhận (Control & ACK Stream):**
+  > `Thao tác Web / REST API` ➔ *(POST /api/control)* ➔ `Node-RED (actions: pending)` ➔ *(MQTT: device/control/*)* ➔ `NodeMCU (thực thi chân GPIO)` ➔ *(device/response)* ➔ `Node-RED (actions: success, response_ms)` ➔ `Web SPA (Đồng bộ công tắc)`
 
 ---
 
@@ -80,12 +82,12 @@ flowchart TD
 
 | Topic | Chiều truyền | QoS | Nội dung Payload JSON / Chuỗi | Mô tả chi tiết |
 |---|---|:---:|---|---|
-| `data/sensor` | NodeMCU $\rightarrow$ Broker | 0 | `{"temp": 28.5, "hum": 65.0, "light": 320}` | Gửi định kỳ 5s/lần thông số nhiệt độ, độ ẩm, ánh sáng |
-| `device/control/led1` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 1 |
-| `device/control/led2` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 2 |
-| `device/control/all` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `{"led1":"ON","led2":"OFF"}` | Lệnh điều khiển đồng thời cả 2 đèn trong 1 bản tin duy nhất |
-| `device/response` | NodeMCU $\rightarrow$ Broker | 0 | `{"id": 1, "device": "led1", "state": "ON", "status": "success"}` | Bản tin phản hồi xác nhận (ACK) kết quả thực thi |
-| `device/response` (LWT) | Broker $\rightarrow$ Node-RED | 0 | `{"id": 0, "device": "node", "state": "OFFLINE", "status": "success"}` | Thông điệp di chúc (Last Will and Testament) kích hoạt khi NodeMCU mất nguồn đột ngột |
+| `data/sensor` | NodeMCU → Broker | 0 | `{"temp": 28.5, "hum": 65.0, "light": 320}` | Gửi định kỳ 5s/lần thông số nhiệt độ, độ ẩm, ánh sáng |
+| `device/control/led1` | Node-RED / CLI → NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 1 |
+| `device/control/led2` | Node-RED / CLI → NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 2 |
+| `device/control/all` | Node-RED / CLI → NodeMCU | 1 | `{"led1":"ON","led2":"OFF"}` | Lệnh điều khiển đồng thời cả 2 đèn trong 1 bản tin duy nhất |
+| `device/response` | NodeMCU → Broker | 0 | `{"id": 1, "device": "led1", "state": "ON", "status": "success"}` | Bản tin phản hồi xác nhận (ACK) kết quả thực thi |
+| `device/response` (LWT) | Broker → Node-RED | 0 | `{"id": 0, "device": "node", "state": "OFFLINE", "status": "success"}` | Thông điệp di chúc (Last Will and Testament) kích hoạt khi NodeMCU mất nguồn đột ngột |
 
 ---
 
@@ -95,9 +97,9 @@ Hệ thống lưu trữ trên **MySQL Community Server 8.0** gồm 5 bảng chu�
 
 ```mermaid
 erDiagram
-    users ||--o{ actions : "executes"
-    devices ||--o{ actions : "controlled_by"
-    sensors ||--o{ data_sensors : "measures"
+    users ||--o{ actions : executes
+    devices ||--o{ actions : controlled_by
+    sensors ||--o{ data_sensors : measures
 
     users {
         int user_id PK
@@ -105,17 +107,17 @@ erDiagram
         varchar password
         varchar full_name
         varchar email UK
-        varchar role "admin | user | viewer"
-        tinyint status "1: active, 0: locked"
+        varchar role
+        tinyint status
         datetime created_at
     }
 
     devices {
         int device_id PK
-        varchar device_code UK "led1, led2"
+        varchar device_code UK
         varchar device_name
-        varchar device_type "LED"
-        varchar status "on | off"
+        varchar device_type
+        varchar status
         datetime created_at
         datetime updated_at
     }
@@ -124,26 +126,26 @@ erDiagram
         bigint action_id PK
         int device_id FK
         int user_id FK
-        text action "led1:ON, led2:OFF"
-        text status "pending | success | failed | timeout"
-        datetime time "Mốc phát lệnh"
-        datetime time_response "Mốc nhận phản hồi"
+        text action
+        text status
+        datetime time
+        datetime time_response
     }
 
     sensors {
         bigint sensor_id PK
-        varchar sensor_code UK "dht11_temp, dht11_hum, ldr_light"
+        varchar sensor_code UK
         varchar sensor_name
-        varchar sensor_type "temperature | humidity | light"
-        varchar unit "°C, %, lux"
+        varchar sensor_type
+        varchar unit
         datetime created_at
     }
 
     data_sensors {
         bigint data_id PK
         bigint sensor_id FK
-        decimal value "Giá trị đo"
-        datetime recorded_at "Thời điểm đo"
+        decimal value
+        datetime recorded_at
         datetime created_at
     }
 ```
@@ -191,7 +193,7 @@ Toàn bộ 31 kịch bản kiểm thử RESTful API được đóng gói trong c
 
 * **Tổng số Request:** 31 requests
 * **Tổng số kiểm thử (pm.test assertions):** **66/66 Passed (100%)**
-* **Thời gian đáp ứng trung bình:** $\approx 64\text{ ms}$
+* **Thời gian đáp ứng trung bình:** khoảng 64 ms (phản hồi tức thời)
 * **Tỷ lệ lỗi (Errors/Failed):** **0%**
 
 ```text
@@ -242,7 +244,6 @@ D:\iot-project\
 │   ├── HUONG_DAN_DEMO.md             # Quy trình 4 bước chuẩn bị và 5 màn trình diễn trước hội đồng
 │   ├── HUONG_DAN_TRIEN_KHAI.md       # Cẩm nang cài đặt chi tiết từ A-Z trên Windows 11
 │   ├── sequence_diagrams.html        # Sơ đồ tuần tự sắc nét 5 Use Case chính
-│   ├── anh_bao_cao_chuong_4/         # Toàn bộ ảnh chụp thực nghiệm thực tế phục vụ báo cáo
 │   └── postman/                      # Bộ công cụ kiểm thử Postman
 │       ├── IoT_Dashboard_API.postman_collection.json
 │       └── IoT_Localhost.postman_environment.json
