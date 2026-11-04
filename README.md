@@ -1,98 +1,322 @@
-# Hệ thống giám sát và điều khiển IoT (NodeMCU · MQTT · Node-RED · MySQL)
+# HỆ THỐNG CẢM BIẾN GIÁM SÁT MÔI TRƯỜNG VÀ ĐIỀU KHIỂN THIẾT BỊ IOT
+> **Học phần**: IoT và Ứng dụng (Mã học phần: **INT14149**)  
+> **Khoa**: An toàn Thông tin — **Học viện Công nghệ Bưu chính Viễn thông (PTIT)**  
+> **Sinh viên thực hiện**: **Triệu Nguyễn Minh Tân** (MSV: **B23DCAT271** - Lớp: **D23CQAT01-B**)  
+> **Kiến trúc cốt lõi**: NodeMCU ESP8266 · Mosquitto MQTT (Port 8000) · Node-RED Backend (Port 8800) · MySQL 8.0 · Web Dashboard SPA · Postman Automated Testing
 
-Dự án đồ án IoT: **NodeMCU ESP8266** đọc nhiệt độ, độ ẩm (DHT11), ánh sáng (quang trở) và điều khiển 2 đèn LED.
-Dữ liệu đi qua **MQTT** → **Node-RED** → lưu vào **MySQL** → hiển thị trên **giao diện web** (dashboard) theo thời gian thực.
+---
 
-## Liên kết nộp bài
+## 📌 LIÊN KẾT BÁO CÁO & NỘP BÀI
 
-| Hạng mục | Liên kết |
-|---|---|
-| GitHub | _(điền link repo)_ |
-| Postman (API docs) | _(điền link published docs)_ |
-| Figma (giao diện) | _(điền link Figma)_ |
-| Báo cáo (PDF) | _(điền link / file `frontend/bao-cao.pdf`)_ |
+| Hạng mục | Nền tảng / Định dạng | Liên kết trực tiếp |
+|---|---|---|
+| **Mã nguồn dự án (GitHub)** | GitHub Repository | [trieunguyenminhtan-ops/iot_project](https://github.com/trieunguyenminhtan-ops/iot_project) |
+| **Tài liệu API (Postman)** | Postman Published Docs | [Postman API Documentation](https://documenter.getpostman.com/view/59265981/2sBYHVwKD2) |
+| **Bản thiết kế giao diện (Figma)** | Figma Prototype & UI | [Figma Design - IOT Project](https://www.figma.com/design/aspO5tDv2OblazGS3toX3F/IOT_figma?node-id=0-1&t=caShhlYFYGxx9peV-1) |
+| **Báo cáo đặc tả hệ thống (SRS)** | PDF Document | [Báo cáo SRS (Google Drive)](https://drive.google.com/file/d/15XEHZ1aj5_eXvdZRVXRdJlNcZaLGECRm/view?usp=sharing) |
 
-## Kiến trúc
+---
+
+## 🏗️ TỔNG QUAN KIẾN TRÚC HỆ THỐNG
+
+Hệ thống được xây dựng theo mô hình phân tầng chuyên biệt (**Multi-tier IoT Architecture**) kết hợp luồng xử lý hướng sự kiện (**Event-driven Architecture**), đảm bảo tính thời gian thực, tách biệt trách nhiệm và độ tin cậy cao:
 
 ```mermaid
-flowchart LR
-    N["NodeMCU ESP8266<br/>DHT11 · LDR · 2 LED"] <-->|MQTT| M["Mosquitto broker"]
-    M <-->|MQTT| R["Node-RED"]
-    R -->|INSERT / SELECT| D[("MySQL<br/>iot_project")]
-    R -->|REST API| W["dashboard.html"]
-    W -->|"POST /api/control"| R
+flowchart TD
+    subgraph Device_Layer ["1. Lớp Thiết bị (Device Layer)"]
+        DHT11["Cảm biến DHT11<br/>(Nhiệt độ & Độ ẩm)"] -->|GPIO4 / D2| NodeMCU["NodeMCU ESP8266 v3<br/>(Firmware C++ / PlatformIO)"]
+        LDR["Quang trở LDR<br/>(Cường độ ánh sáng)"] -->|ADC0 / A0| NodeMCU
+        NodeMCU -->|GPIO14 / D5| LED1["Đèn LED 1 (Trở 220Ω)"]
+        NodeMCU -->|GPIO12 / D6| LED2["Đèn LED 2 (Trở 220Ω)"]
+    end
+
+    subgraph Network_Layer ["2. Lớp Truyền thông & Mạng (Network Layer)"]
+        Broker["MQTT Broker: Eclipse Mosquitto<br/>(Port TCP 8000 · Auth: b23dcat271)"]
+    end
+
+    subgraph Middleware_Layer ["3. Lớp Xử lý Trung tâm (Backend Layer)"]
+        NodeRED["Node-RED Runtime v3.x<br/>(Port 8800 · REST API & Web Server)"]
+        MySQL[("Cơ sở dữ liệu: MySQL 8.0<br/>Database: iot_project (5 bảng)")]
+    end
+
+    subgraph Application_Layer ["4. Lớp Ứng dụng & Trực quan (Application Layer)"]
+        SPA["Giao diện Web SPA (dashboard.html)<br/>HTML5 · Tailwind CSS · Chart.js · Lucide Icons"]
+        Postman["Kiểm thử tự động Postman Runner<br/>(31 Requests · 66 Test Assertions)"]
+    end
+
+    NodeMCU <-->|MQTT Publish/Subscribe| Broker
+    Broker <-->|MQTT in/out Nodes| NodeRED
+    NodeRED <-->|SQL Queries (mysql pool)| MySQL
+    SPA <-->|HTTP REST Polling / POST Control| NodeRED
+    Postman -->|REST API Testing & RBAC| NodeRED
 ```
 
-### Topic MQTT
+### Hai luồng dữ liệu cốt lõi:
+1. **Luồng thu thập dữ liệu (Telemetry Stream):**
+   $$\text{Cảm biến (DHT11, LDR)} \xrightarrow{\text{5s/lần}} \text{NodeMCU} \xrightarrow{\text{MQTT: data/sensor}} \text{Broker} \xrightarrow{} \text{Node-RED} \xrightarrow{\text{INSERT}} \text{MySQL} \xrightarrow{\text{GET /api/dashboard}} \text{Web SPA}$$
+2. **Luồng điều khiển thiết bị có phản hồi xác nhận (Control & ACK Stream):**
+   $$\text{Thao tác Web/API} \xrightarrow{\text{POST /api/control}} \text{Node-RED (actions: pending)} \xrightarrow{\text{MQTT}} \text{NodeMCU (thực thi)} \xrightarrow{\text{device/response}} \text{Node-RED (actions: success, response\_ms)} \xrightarrow{\text{ACK}} \text{Web SPA}$$
 
-| Topic | Chiều | Nội dung |
-|---|---|---|
-| `data/sensor` | NodeMCU → broker | `{"temp":28.5,"hum":65,"light":320}` (mỗi 5 giây) |
-| `device/control/led1`, `device/control/led2` | giao diện/terminal → NodeMCU | `ON` hoặc `OFF` |
-| `device/control/all` | giao diện/terminal → NodeMCU | `{"led1":"ON","led2":"OFF"}` (1 lệnh điều khiển nhiều đèn) |
-| `device/response` | NodeMCU → broker | `{"id":1,"device":"led1","state":"ON","status":"success"}` |
+---
 
+## 🔌 SƠ ĐỒ ĐẤU NỐI PHẦN CỨNG (PINOUT)
 
-## API (Node-RED)
-
-| Method | Đường dẫn | Chức năng | Phân quyền |
+| Linh kiện | Chân linh kiện | Chân NodeMCU v3 | Vai trò kỹ thuật & Ràng buộc |
 |---|---|---|---|
-| POST | `/api/login` | Đăng nhập hệ thống (nhận JWT/Bearer token) | Công khai |
-| POST | `/api/logout` | Đăng xuất phiên làm việc | Đã đăng nhập |
-| GET | `/api/me` | Lấy thông tin tài khoản hiện tại | Đã đăng nhập |
-| GET | `/api/dashboard` | Số liệu mới nhất, trạng thái đèn, biểu đồ | Công khai / Xem |
-| GET | `/api/sensors` | Data sensor: tìm kiếm, lọc loại cảm biến, phân trang | Công khai / Xem |
-| GET | `/api/actions` | Lịch sử điều khiển: lọc thiết bị/hành động/trạng thái/thời gian, phân trang | Công khai / Xem |
-| POST | `/api/control` | Bật/tắt đèn: `{"device":"led1","action":"ON"}` | **Admin / User** |
-| GET | `/api/profile` | Thông tin sinh viên (bảng `users`) | Đã đăng nhập |
+| **Cảm biến DHT11** | `VCC` / `GND` / `DATA` | `3V3` / `GND` / **`D2`** (GPIO4) | Đo Nhiệt độ (°C) và Độ ẩm (%), chu kỳ lấy mẫu 5s/lần |
+| **Quang trở LDR** | `VCC` / `GND` / `AO` | `3V3` / `GND` / **`A0`** (ADC0) | Đo cường độ ánh sáng, dải ADC: 0 – 1023 |
+| **Đèn LED 1** | (+) Anode / (-) Cathode | **`D5`** (GPIO14) / `GND` | Thiết bị chấp hành 1 (mắc nối tiếp điện trở hạn dòng 220Ω) |
+| **Đèn LED 2** | (+) Anode / (-) Cathode | **`D6`** (GPIO12) / `GND` | Thiết bị chấp hành 2 (mắc nối tiếp điện trở hạn dòng 220Ω) |
+| **Nguồn cấp** | Cáp Micro-USB | Cổng **`COM6`** | Cấp nguồn 5V/1A, giao tiếp nối tiếp Serial Baudrate **115200** |
 
-Tài liệu đầy đủ và ví dụ nằm trong collection Postman: [`docs/postman/`](docs/postman/).
+---
 
-## Phân quyền & Tài khoản mẫu
+## 📡 GIAO THỨC TRUYỀN THÔNG MQTT (PORT 8000)
 
-| Tài khoản | Mật khẩu | Quyền | Mô tả |
-|---|---|---|---|
-| `admin` | `admin123` | **admin** | Toàn quyền xem dữ liệu, điều khiển bật/tắt thiết bị |
-| `user` | `user123` | **user** | Quyền bật/tắt thiết bị, xem Data sensor, Action history, Profile |
-| `viewer` | `viewer123` | **viewer** | Chỉ xem Dashboard; không được điều khiển đèn và không được xem Data sensor, Action history, Profile |
+* **MQTT Broker**: Eclipse Mosquitto v2.x (Cổng TCP `8000`).
+* **Xác thực**: Username `b23dcat271` / Password `trieunguyenminhtan`.
 
-## Cấu trúc thư mục
+### Danh mục Topic MQTT trong hệ thống:
 
+| Topic | Chiều truyền | QoS | Nội dung Payload JSON / Chuỗi | Mô tả chi tiết |
+|---|---|:---:|---|---|
+| `data/sensor` | NodeMCU $\rightarrow$ Broker | 0 | `{"temp": 28.5, "hum": 65.0, "light": 320}` | Gửi định kỳ 5s/lần thông số nhiệt độ, độ ẩm, ánh sáng |
+| `device/control/led1` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 1 |
+| `device/control/led2` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 2 |
+| `device/control/all` | Node-RED / CLI $\rightarrow$ NodeMCU | 1 | `{"led1":"ON","led2":"OFF"}` | Lệnh điều khiển đồng thời cả 2 đèn trong 1 bản tin duy nhất |
+| `device/response` | NodeMCU $\rightarrow$ Broker | 0 | `{"id": 1, "device": "led1", "state": "ON", "status": "success"}` | Bản tin phản hồi xác nhận (ACK) kết quả thực thi |
+| `device/response` (LWT) | Broker $\rightarrow$ Node-RED | 0 | `{"id": 0, "device": "node", "state": "OFFLINE", "status": "success"}` | Thông điệp di chúc (Last Will and Testament) kích hoạt khi NodeMCU mất nguồn đột ngột |
+
+---
+
+## 🗄️ THIẾT KẾ CƠ SỞ DỮ LIỆU (MYSQL `iot_project`)
+
+Hệ thống lưu trữ trên **MySQL Community Server 8.0** gồm 5 bảng chuẩn hóa theo mô hình quan hệ ERD:
+
+```mermaid
+erDiagram
+    users ||--o{ actions : "executes"
+    devices ||--o{ actions : "controlled_by"
+    sensors ||--o{ data_sensors : "measures"
+
+    users {
+        int user_id PK
+        varchar username UK
+        varchar password
+        varchar full_name
+        varchar email UK
+        varchar role "admin | user | viewer"
+        tinyint status "1: active, 0: locked"
+        datetime created_at
+    }
+
+    devices {
+        int device_id PK
+        varchar device_code UK "led1, led2"
+        varchar device_name
+        varchar device_type "LED"
+        varchar status "on | off"
+        datetime created_at
+        datetime updated_at
+    }
+
+    actions {
+        bigint action_id PK
+        int device_id FK
+        int user_id FK
+        text action "led1:ON, led2:OFF"
+        text status "pending | success | failed | timeout"
+        datetime time "Mốc phát lệnh"
+        datetime time_response "Mốc nhận phản hồi"
+    }
+
+    sensors {
+        bigint sensor_id PK
+        varchar sensor_code UK "dht11_temp, dht11_hum, ldr_light"
+        varchar sensor_name
+        varchar sensor_type "temperature | humidity | light"
+        varchar unit "°C, %, lux"
+        datetime created_at
+    }
+
+    data_sensors {
+        bigint data_id PK
+        bigint sensor_id FK
+        decimal value "Giá trị đo"
+        datetime recorded_at "Thời điểm đo"
+        datetime created_at
+    }
 ```
-iot-project/
-├── platformio.ini                # Cấu hình PlatformIO (mở thư mục này trong Antigravity IDE hoặc VS Code)
-├── AGENTS.md                     # Quy chuẩn và ngữ cảnh cho Antigravity AI Agent
-├── firmware/
-│   ├── src/main.cpp              # Code NodeMCU (đọc cảm biến, điều khiển LED)
+
+---
+
+## 🌐 DANH MỤC RESTFUL API (NODE-RED BACKEND PORT 8800)
+
+| Phương thức | Đường dẫn API | Chức năng nghiệp vụ | Quyền truy cập | Mã trạng thái HTTP |
+|:---:|---|---|:---:|:---:|
+| `POST` | `/api/login` | Đăng nhập tài khoản, sinh Bearer Token lưu phiên | Công khai | `200 OK`, `400 Bad`, `401 Unauth` |
+| `POST` | `/api/logout` | Đăng xuất phiên làm việc hiện tại | Đã đăng nhập | `200 OK`, `401 Unauth` |
+| `GET` | `/api/me` | Lấy thông tin tài khoản đang kết nối | Đã đăng nhập | `200 OK`, `401 Unauth` |
+| `GET` | `/api/dashboard` | Lấy số liệu cảm biến mới nhất, trạng thái đèn và 20 điểm vẽ biểu đồ (alias: `/api/dashboard/summary`) | Công khai (Viewer) | `200 OK` |
+| `GET` | `/api/sensors` | Tra cứu dữ liệu cảm biến: lọc loại, tìm kiếm theo ngày giờ/giá trị, phân trang | Admin / User | `200 OK`, `401 Unauth` |
+| `GET` | `/api/actions` | Tra cứu nhật ký điều khiển: lọc thiết bị/hành động/trạng thái, phân trang | Admin / User | `200 OK`, `401 Unauth` |
+| `POST` | `/api/control` | Điều khiển bật/tắt đèn: `{"device":"led1","action":"ON"}` | **Admin / User** | `200 OK`, `400 Bad`, `403 Forbidden` (Viewer), `504 Timeout` |
+| `GET` | `/api/profile` | Xem thông tin hồ sơ sinh viên thực hiện đề tài | **Duy nhất Admin** | `200 OK`, `401 Unauth`, `403 Forbidden` |
+
+---
+
+## 🔐 MA TRẬN PHÂN QUYỀN NGƯỜI DÙNG (RBAC)
+
+Hệ thống quản lý xác thực bằng **Bearer Token** truyền qua HTTP Header `Authorization: Bearer <token>`:
+
+| Tính năng trên hệ thống | Khách vãng lai (`viewer`) | Người dùng tiêu chuẩn (`user`) | Quản trị viên (`admin`) |
+|---|:---:|:---:|:---:|
+| **Xem Dashboard (Cards & Chart)** | ✅ Cho phép xem | ✅ Cho phép xem | ✅ Cho phép xem |
+| **Bật/Tắt công tắc đèn (LED 1 & LED 2)** | ❌ **Bị khóa (Disable)** | ✅ **Được điều khiển** | ✅ **Toàn quyền điều khiển** |
+| **Tra cứu tab Data sensor & Bộ lọc** | ❌ Chặn truy cập | ✅ Tra cứu & Lọc | ✅ Toàn quyền truy vấn |
+| **Tra cứu tab Action history & Lịch sử** | ❌ Chặn truy cập | ✅ Tra cứu & Lọc | ✅ Toàn quyền truy vấn |
+| **Xem màn hình Profile sinh viên** | ❌ Chặn truy cập | ❌ Chặn truy cập | ✅ **Duy nhất Admin** |
+| **Yêu cầu mã Bearer Token khi gọi API** | Không có token | Bắt buộc Bearer Token | Bắt buộc Bearer Token |
+
+### Tài khoản thử nghiệm mẫu:
+* **Admin**: `admin` / `admin123` (Toàn quyền quản trị hệ thống).
+* **User**: `user` / `user123` (Người dùng có quyền điều khiển và tra cứu).
+* **Viewer**: Mặc định khi chưa đăng nhập hoặc bấm Đăng xuất (Chỉ xem Dashboard).
+
+---
+
+## 🧪 KIỂM THỬ TỰ ĐỘNG HÓA POSTMAN (66/66 TESTS PASSED)
+
+Toàn bộ 31 kịch bản kiểm thử RESTful API được đóng gói trong collection [`docs/postman/IoT_Dashboard_API.postman_collection.json`](docs/postman/IoT_Dashboard_API.postman_collection.json). Khi thực thi tự động qua **Postman Collection Runner**:
+
+* **Tổng số Request:** 31 requests
+* **Tổng số kiểm thử (pm.test assertions):** **66/66 Passed (100%)**
+* **Thời gian đáp ứng trung bình:** $\approx 64\text{ ms}$
+* **Tỷ lệ lỗi (Errors/Failed):** **0%**
+
+```text
+Iter 1: [POST] /api/login (Admin)                -> 200 OK (2 tests passed)
+Iter 2: [GET]  /api/me                           -> 200 OK (2 tests passed)
+Iter 3: [POST] /api/login (User)                 -> 200 OK (2 tests passed)
+Iter 4: [GET]  /api/dashboard                    -> 200 OK (5 tests passed)
+Iter 5-12: [GET] /api/sensors (Filter, Search, 401) -> 200 OK / 401 (16 tests passed)
+Iter 13-22: [GET] /api/actions (Filter, Search, 401) -> 200 OK / 401 (20 tests passed)
+Iter 23-28: [POST] /api/control (ON, OFF, 400, 401)  -> 200 OK / 400 / 401 (12 tests passed)
+Iter 29-31: [GET/POST] /api/profile, /api/logout     -> 200 OK / 401 (7 tests passed)
+--------------------------------------------------------------------------------------
+TOTAL: 31 Requests | 66 Test Assertions | 0 Failures | 0 Errors
+```
+
+---
+
+## 📂 CẤU TRÚC THƯ MỤC DỰ ÁN
+
+```text
+D:\iot-project\
+├── platformio.ini                    # Cấu hình biên dịch & nạp firmware PlatformIO (ESP8266, COM6, 115200)
+├── AGENTS.md                         # Quy chuẩn hệ thống & nguyên tắc dành cho Antigravity AI Agent
+├── README.md                         # Tài liệu giới thiệu & hướng dẫn toàn diện của dự án
+├── SRS.pdf                           # Báo cáo đặc tả yêu cầu phần mềm và kết quả thực nghiệm (50 trang)
+├── SRS.docx                          # File tài liệu Word nguồn
+│
+├── firmware/                         # Mã nguồn nhúng vi điều khiển NodeMCU
+│   ├── src/
+│   │   └── main.cpp                  # Code C++ chính: đọc DHT11, LDR, điều khiển LED, xử lý MQTT & JSON
 │   └── include/
-│       ├── secrets.example.h     # Mẫu thông tin WiFi/MQTT  → sao chép thành secrets.h
-│       └── secrets.h             # (KHÔNG có trên GitHub) thông tin thật
-├── database/schema.sql           # 5 bảng: users, devices, sensors, actions, data_sensors
-├── node-red/flow_iot_all.json    # Flow: ghi dữ liệu MQTT → DB, API Auth & Control
-├── frontend/dashboard.html       # Giao diện web: Dashboard, Data sensor, Action history, Profile, Login modal
-├── docs/
-│   ├── HUONG_DAN_TRIEN_KHAI.md   # Hướng dẫn triển khai từ A-Z (Windows 11)
-│   └── postman/                  # Collection + environment Postman
-└── scripts/windows/start-node-red.bat
+│       ├── secrets.h                 # Cấu hình thông tin mạng WiFi, MQTT Broker (nội bộ)
+│       └── secrets.example.h         # Mẫu cấu hình WiFi & MQTT mẫu
+│
+├── database/
+│   └── schema.sql                    # Script tạo 5 bảng MySQL và dữ liệu mẫu (users, devices, sensors, ...)
+│
+├── node-red/
+│   └── flow_iot_all.json             # Toàn bộ luồng backend: MQTT subscribe, MySQL pool, REST API, Auth RBAC
+│
+├── frontend/                         # Ứng dụng Web Single Page Application (SPA)
+│   ├── dashboard.html                # Giao diện chính: Dashboard, Data sensor, Action history, Profile, Auth modal
+│   ├── architecture_diagram.html     # Sơ đồ kiến trúc tương tác trực quan
+│   ├── database_diagram.html         # Sơ đồ cơ sở dữ liệu tương tác trực quan
+│   └── *.svg                         # Bản vẽ kiến trúc định dạng vector
+│
+├── docs/                             # Tài liệu kỹ thuật chi tiết
+│   ├── HUONG_DAN_DEMO.md             # Quy trình 4 bước chuẩn bị và 5 màn trình diễn trước hội đồng
+│   ├── HUONG_DAN_TRIEN_KHAI.md       # Cẩm nang cài đặt chi tiết từ A-Z trên Windows 11
+│   ├── sequence_diagrams.html        # Sơ đồ tuần tự sắc nét 5 Use Case chính
+│   ├── anh_bao_cao_chuong_4/         # Toàn bộ ảnh chụp thực nghiệm thực tế phục vụ báo cáo
+│   └── postman/                      # Bộ công cụ kiểm thử Postman
+│       ├── IoT_Dashboard_API.postman_collection.json
+│       └── IoT_Localhost.postman_environment.json
+│
+└── scripts/windows/
+    └── start-node-red.bat            # Script khởi động nhanh Node-RED backend chỉ với 1 click
 ```
 
-## Chạy nhanh
+---
 
-Hướng dẫn chi tiết từng bước (cài đặt, đấu nối, nạp firmware, Postman, Figma, GitHub) xem
-[`docs/HUONG_DAN_TRIEN_KHAI.md`](docs/HUONG_DAN_TRIEN_KHAI.md). Tóm tắt:
+## ⚡ HƯỚNG DẪN KHỞI ĐỘNG NHANH (QUICKSTART)
 
-1. Cài Mosquitto, MySQL 8, Node.js + Node-RED, VS Code + PlatformIO.
-2. `mysql -u root -p -e "source C:/iot-project/database/schema.sql"`, tạo user `iot`.
-3. Chép `firmware/include/secrets.example.h` → `secrets.h`, điền WiFi và IP máy chạy broker.
-4. Mở thư mục dự án bằng VS Code → PlatformIO **Upload** lên NodeMCU.
-5. Import `node-red/flow_iot_all.json` vào Node-RED, điền mật khẩu MQTT/MySQL, **Deploy**.
-6. Mở `http://localhost:8800/dashboard.html`.
+### 1. Chuẩn bị môi trường phần mềm
+Đảm bảo máy tính đã cài đặt:
+* **MySQL Community Server 8.0** (Port 3306)
+* **Eclipse Mosquitto MQTT Broker v2.x** (Port 8000)
+* **Node.js LTS (v20+)** và **Node-RED** (`npm install -g --unsafe-perm node-red`)
+* **VS Code / Antigravity IDE** có cài extension **PlatformIO IDE**
 
-## Đấu nối phần cứng
+### 2. Thiết lập Cơ sở dữ liệu MySQL
+Mở Command Prompt hoặc MySQL Workbench và thực thi:
+```sql
+SOURCE D:/iot-project/database/schema.sql;
+```
 
-| Linh kiện | Chân NodeMCU |
-|---|---|
-| DHT11 (VCC / GND / DATA) | 3V3 / GND / **D2** (GPIO4) |
-| Cảm biến ánh sáng (VCC / GND / AO) | 3V3 / GND / **A0** |
-| LED 1 (qua điện trở 220Ω) | **D5** (GPIO14) |
-| LED 2 (qua điện trở 220Ω) | **D6** (GPIO12) |
+### 3. Biên dịch và nạp Firmware lên NodeMCU
+1. Cắm cáp Micro-USB nối bo mạch NodeMCU vào cổng máy tính (Ví dụ: `COM6`).
+2. Mở thư mục `D:\iot-project` trong IDE, mở terminal chạy lệnh:
+```powershell
+# Biên dịch mã nguồn
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run
+
+# Nạp vào NodeMCU
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -t upload
+
+# Mở Serial Monitor theo dõi
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" device monitor
+```
+
+### 4. Khởi động Backend Node-RED (Port 8800)
+Nhấp đúp chuột vào file:
+👉 **`D:\iot-project\scripts\windows\start-node-red.bat`**  
+*(Cửa sổ dòng lệnh Node-RED sẽ chạy ngầm và lắng nghe tại cổng `8800`).*
+
+### 5. Truy cập Giao diện Web Dashboard
+Mở trình duyệt Google Chrome và truy cập:
+👉 **`http://localhost:8800/dashboard.html`**
+
+---
+
+## 🛠️ CƠ CHẾ CHỊU LỖI & TÍNH NĂNG NỔI BẬT
+
+1. **Cảnh báo mất kết nối NodeMCU (Heartbeat & LWT Alert):**
+   * Nếu sau **10 giây** giao diện không nhận được dữ liệu cảm biến từ NodeMCU (do mất nguồn, đứt cáp hoặc mất sóng WiFi), giao diện Web lập tức xuất hiện **Thanh cảnh báo đỏ nhấp nháy (`#nodemcu-disconnect-alert`)** kèm hiệu ứng `animate-pulse`. Khi thiết bị online trở lại, thanh cảnh báo tự động ẩn đi tức thời.
+2. **Cơ chế Timeout chống treo lệnh điều khiển (5000ms):**
+   * Khi người dùng phát lệnh điều khiển nhưng mạch phần cứng đang offline, sau 5 giây Node-RED tự động cập nhật bản ghi trong bảng `actions` sang trạng thái `timeout`, triệt tiêu hoàn toàn lỗi kẹt trạng thái `pending` vĩnh viễn.
+3. **Đồng bộ hai chiều và Khôi phục trạng thái (State Persistence):**
+   * Ứng dụng lưu trữ đệm tại `localStorage`. Khi người dùng nhấn **F5 (Reload trang)**, hệ thống khôi phục trạng thái BẬT/TẮT của 2 đèn, số liệu đo cảm biến và tab làm việc đang mở ngay tức thì mà không bị trễ hay vỡ giao diện.
+4. **Hỗ trợ điều khiển gộp đa kênh qua dòng lệnh (Batch Control):**
+   * Cho phép gửi trực tiếp lệnh từ Terminal qua Mosquitto CLI mà không cần mở Web:
+     ```cmd
+     mosquitto_pub -h localhost -p 8000 -u b23dcat271 -P trieunguyenminhtan -t "device/control/all" -m "{\"led1\":\"ON\",\"led2\":\"OFF\"}"
+     ```
+   * Firmware và Backend tự động chuẩn hóa dấu nháy và cập nhật trạng thái đồng bộ lên cơ sở dữ liệu và màn hình điều khiển.
+
+---
+
+## 👥 THÔNG TIN TÁC GIẢ & BẢN QUYỀN
+
+* **Sinh viên thực hiện**: **Triệu Nguyễn Minh Tân**
+* **Mã sinh viên**: **B23DCAT271**
+* **Lớp**: **D23CQAT01-B**
+* **Khoa**: An toàn Thông tin — Học viện Công nghệ Bưu chính Viễn thông (PTIT)
+* **Email liên hệ**: [trieunguyenminhtan@gmail.com](mailto:trieunguyenminhtan@gmail.com)
+* **Số điện thoại**: 0845620255
+
+*Dự án được xây dựng phục vụ nghiên cứu học thuật và nghiệm thu học phần IoT và Ứng dụng (INT14149).*

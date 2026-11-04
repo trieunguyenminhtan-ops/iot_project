@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1230 480" width="100%" height="100%">
+  <defs>
+    <!-- Mũi tên chuẩn SVG (tự động xoay theo mọi hướng: ngang, dọc lên, dọc xuống) -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1E293B"/>
+    </marker>
+
+    <!-- Lưới mờ nhẹ nhàng mô phỏng bảng vẽ kỹ thuật -->
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#F1F5F9" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .header-title { font-size: 15px; font-weight: 700; fill: #0F172A; }
+    .header-sub { font-size: 13px; font-weight: 600; fill: #1E293B; }
+    .bullet-item { font-size: 12.5px; fill: #1E293B; }
+    .bullet-sub { font-size: 11px; fill: #475569; }
+    .arrow-text-main { font-size: 11px; font-weight: 600; fill: #0F172A; text-anchor: middle; }
+    .arrow-text-sub { font-size: 10px; fill: #475569; text-anchor: middle; }
+  </style>
+
+  <!-- NỀN TRẮNG -->
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- ======================================================== -->
+  <!-- 1. IOT HARDWARE (X: 30, Width: 185) -->
+  <!-- ======================================================== -->
+  <g transform="translate(30, 40)">
+    <rect width="185" height="240" rx="16" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.8"/>
+    <text class="header-title" x="92.5" y="32" text-anchor="middle">IoT Hardware</text>
+    <text class="header-sub" x="92.5" y="50" text-anchor="middle">(ESP8266 + Sensors)</text>
+
+    <g transform="translate(18, 80)">
+      <text class="bullet-item" x="0" y="0">• ESP8266</text>
+      <text class="bullet-sub" x="10" y="16">(PlatformIO)</text>
+
+      <text class="bullet-item" x="0" y="42">• DHT11</text>
+      <text class="bullet-sub" x="10" y="58">(Nhiệt độ, Độ ẩm)</text>
+
+      <text class="bullet-item" x="0" y="84">• LDR</text>
+      <text class="bullet-sub" x="10" y="100">(Ánh sáng)</text>
+
+      <text class="bullet-item" x="0" y="126">• LED</text>
+      <text class="bullet-sub" x="10" y="142">(Thiết bị chấp hành)</text>
+    </g>
+  </g>
+
+  <!-- MŨI TÊN: HARDWARE <-> MQTT BROKER (Gap: 215 -> 355) -->
+  <g>
+    <!-- Chiều đi: Publish -->
+    <path d="M 215 115 L 355 115" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="285" y="93">MQTT Publish</text>
+    <text class="arrow-text-sub" x="285" y="107">(Dữ liệu cảm biến)</text>
+
+    <!-- Chiều về: Subscribe -->
+    <path d="M 355 205 L 215 205" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="285" y="224">MQTT Subscribe</text>
+    <text class="arrow-text-sub" x="285" y="238">(Lệnh điều khiển)</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 2. MQTT BROKER (X: 355, Width: 185) -->
+  <!-- ======================================================== -->
+  <g transform="translate(355, 40)">
+    <rect width="185" height="240" rx="16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.8"/>
+    <text class="header-title" x="92.5" y="32" text-anchor="middle">MQTT Broker</text>
+    <text class="header-sub" x="92.5" y="50" text-anchor="middle">(Eclipse Mosquitto)</text>
+
+    <g transform="translate(18, 80)">
+      <text class="bullet-item" x="0" y="0">• Mosquitto Broker</text>
+
+      <text class="bullet-item" x="0" y="32">• Giao thức: MQTT</text>
+      <text class="bullet-sub" x="10" y="48">(Pub/Sub)</text>
+
+      <text class="bullet-item" x="0" y="74">• PubSubClient</text>
+      <text class="bullet-sub" x="10" y="90">(ESP8266)</text>
+
+      <text class="bullet-item" x="0" y="116">• MQTT In / Out</text>
+      <text class="bullet-sub" x="10" y="132">(Node-RED)</text>
+    </g>
+  </g>
+
+  <!-- MŨI TÊN: MQTT BROKER <-> BACKEND (Gap: 540 -> 680) -->
+  <g>
+    <!-- Chiều đi: Subscribe Telemetry + Phản hồi -->
+    <path d="M 540 115 L 680 115" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="610" y="86">MQTT Subscribe</text>
+    <text class="arrow-text-sub" x="610" y="99">(Dữ liệu cảm biến +</text>
+    <text class="arrow-text-sub" x="610" y="110">Phản hồi)</text>
+
+    <!-- Chiều về: Publish lệnh điều khiển -->
+    <path d="M 680 205 L 540 205" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="610" y="224">MQTT Publish</text>
+    <text class="arrow-text-sub" x="610" y="238">(Điều khiển thiết bị)</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 3. BACKEND (NODE-RED) (X: 680, Width: 185) -->
+  <!-- ======================================================== -->
+  <g transform="translate(680, 40)">
+    <rect width="185" height="240" rx="16" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.8"/>
+    <text class="header-title" x="92.5" y="32" text-anchor="middle">Backend</text>
+    <text class="header-sub" x="92.5" y="50" text-anchor="middle">(Node-RED)</text>
+
+    <g transform="translate(18, 80)">
+      <text class="bullet-item" x="0" y="0">• Node-RED</text>
+      <text class="bullet-sub" x="10" y="16">(Flow-based)</text>
+
+      <text class="bullet-item" x="0" y="42">• MQTT Nodes</text>
+      <text class="bullet-sub" x="10" y="58">(Pub / Sub)</text>
+
+      <text class="bullet-item" x="0" y="84">• MySQL Node</text>
+      <text class="bullet-sub" x="10" y="100">(Lưu trữ &amp; Truy vấn)</text>
+
+      <text class="bullet-item" x="0" y="126">• REST API</text>
+      <text class="bullet-sub" x="10" y="142">(HTTP Endpoints)</text>
+    </g>
+  </g>
+
+  <!-- MŨI TÊN: BACKEND <-> FRONTEND (Gap: 865 -> 1015, rộng 150px rộng rãi) -->
+  <g>
+    <!-- Chiều đi: REST API dữ liệu + kết quả -->
+    <path d="M 865 115 L 1015 115" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="940" y="86">REST API / HTTP</text>
+    <text class="arrow-text-sub" x="940" y="99">(Dữ liệu cảm biến +</text>
+    <text class="arrow-text-sub" x="940" y="110">Kết quả request)</text>
+
+    <!-- Chiều về: HTTP / REST API request (xuống dòng gọn gàng không bị chạm viền) -->
+    <path d="M 1015 205 L 865 205" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="arrow-text-main" x="940" y="222">HTTP / REST API</text>
+    <text class="arrow-text-sub" x="940" y="235">(/api/control,</text>
+    <text class="arrow-text-sub" x="940" y="246">/api/sensors...)</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 4. FRONTEND (X: 1015, Width: 185) -->
+  <!-- ======================================================== -->
+  <g transform="translate(1015, 40)">
+    <rect width="185" height="240" rx="16" fill="#F3E8FF" stroke="#A855F7" stroke-width="1.8"/>
+    <text class="header-title" x="92.5" y="32" text-anchor="middle">Frontend</text>
+    <text class="header-sub" x="92.5" y="50" text-anchor="middle">(Web Dashboard)</text>
+
+    <g transform="translate(18, 80)">
+      <text class="bullet-item" x="0" y="0">• Web Dashboard</text>
+      <text class="bullet-sub" x="10" y="16">HTML / CSS / JS</text>
+
+      <text class="bullet-item" x="0" y="42">• Tailwind CSS</text>
+      <text class="bullet-sub" x="10" y="58">(Giao diện đáp ứng)</text>
+
+      <text class="bullet-item" x="0" y="84">• Chart.js</text>
+      <text class="bullet-sub" x="10" y="100">(Biểu đồ)</text>
+
+      <text class="bullet-item" x="0" y="126">• REST API</text>
+      <text class="bullet-sub" x="10" y="142">(Polling &amp; Fetch)</text>
+    </g>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 5. DATABASE (MYSQL) & KẾT NỐI VỚI BACKEND -->
+  <!-- ======================================================== -->
+  <g>
+    <!-- Mũi tên xuống: Lưu / Truy vấn (Đầu mũi tên chúc xuống thẳng đứng chuẩn xác) -->
+    <path d="M 740 280 L 740 365" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="726" y="320" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="end">Lưu / Truy vấn</text>
+    <text x="726" y="333" font-size="9.5" fill="#475569" text-anchor="end">SQL</text>
+
+    <!-- Mũi tên lên: Trả kết quả (Đầu mũi tên hướng lên thẳng đứng chuẩn xác) -->
+    <path d="M 805 365 L 805 280" stroke="#1E293B" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="818" y="325" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Trả kết quả</text>
+
+    <!-- Khối Database hình trụ chuẩn (Đặt cân đối ở giữa Backend: X: 707.5) -->
+    <g transform="translate(707.5, 365)">
+      <!-- Thân trụ -->
+      <path d="M 0 15 L 0 55 A 65 14 0 0 0 130 55 L 130 15 Z" fill="#FFE4E6" stroke="#F43F5E" stroke-width="1.8"/>
+      <!-- Đáy cong viền -->
+      <path d="M 0 55 A 65 14 0 0 0 130 55" fill="none" stroke="#F43F5E" stroke-width="1.8"/>
+      <!-- Nắp elip trên -->
+      <ellipse cx="65" cy="15" rx="65" ry="14" fill="#FECDD3" stroke="#F43F5E" stroke-width="1.8"/>
+      
+      <!-- Chữ trong CSDL -->
+      <text class="header-title" x="65" y="42" text-anchor="middle" font-size="13.5">Database</text>
+      <text class="header-sub" x="65" y="56" text-anchor="middle" font-size="11.5">(MySQL)</text>
+    </g>
+  </g>
+
+</svg>

@@ -984,5 +984,22 @@
         "fn_log_command"
       ]
     ]
+  },
+  {
+    "id": "h_dash_summary",
+    "type": "http in",
+    "z": "flow_dashboard_api",
+    "name": "GET /api/dashboard/summary",
+    "url": "/api/dashboard/summary",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "fn_dash_q1"
+      ]
+    ]
   }
 ]
