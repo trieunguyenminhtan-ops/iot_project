@@ -31,7 +31,7 @@ flowchart TD
     end
 
     subgraph Network_Layer ["2. Lớp Truyền thông & Mạng (Network Layer)"]
-        Broker["MQTT Broker: Eclipse Mosquitto<br/>(Port TCP 8000 · Auth: b23dcat271)"]
+        Broker["MQTT Broker: Eclipse Mosquitto<br/>(Port TCP 8000 · Xác thực bảo mật)"]
     end
 
     subgraph Middleware_Layer ["3. Lớp Xử lý Trung tâm (Backend Layer)"]
@@ -76,7 +76,7 @@ flowchart TD
 ## 📡 GIAO THỨC TRUYỀN THÔNG MQTT (PORT 8000)
 
 * **MQTT Broker**: Eclipse Mosquitto v2.x (Cổng TCP `8000`).
-* **Xác thực**: Username `b23dcat271` / Password `trieunguyenminhtan`.
+* **Xác thực**: Hỗ trợ xác thực bảo mật tài khoản người dùng (cấu hình trong `secrets.h` và file mật khẩu của Mosquitto Broker).
 
 ### Danh mục Topic MQTT trong hệ thống:
 
@@ -240,11 +240,9 @@ D:\iot-project\
 │   ├── database_diagram.html         # Sơ đồ cơ sở dữ liệu tương tác trực quan
 │   └── *.svg                         # Bản vẽ kiến trúc định dạng vector
 │
-├── docs/                             # Tài liệu kỹ thuật chi tiết
-│   ├── HUONG_DAN_DEMO.md             # Quy trình 4 bước chuẩn bị và 5 màn trình diễn trước hội đồng
-│   ├── HUONG_DAN_TRIEN_KHAI.md       # Cẩm nang cài đặt chi tiết từ A-Z trên Windows 11
-│   ├── sequence_diagrams.html        # Sơ đồ tuần tự sắc nét 5 Use Case chính
-│   └── postman/                      # Bộ công cụ kiểm thử Postman
+├── docs/                             # Tài liệu kỹ thuật dự án
+│   ├── HUONG_DAN_TRIEN_KHAI.md       # Cẩm nang cài đặt và triển khai chi tiết từ A-Z trên Windows 11
+│   └── postman/                      # Bộ công cụ kiểm thử tự động Postman
 │       ├── IoT_Dashboard_API.postman_collection.json
 │       └── IoT_Localhost.postman_environment.json
 │
@@ -305,8 +303,9 @@ Mở trình duyệt Google Chrome và truy cập:
 4. **Hỗ trợ điều khiển gộp đa kênh qua dòng lệnh (Batch Control):**
    * Cho phép gửi trực tiếp lệnh từ Terminal qua Mosquitto CLI mà không cần mở Web:
      ```cmd
-     mosquitto_pub -h localhost -p 8000 -u b23dcat271 -P trieunguyenminhtan -t "device/control/all" -m "{\"led1\":\"ON\",\"led2\":\"OFF\"}"
+     mosquitto_pub -h localhost -p 8000 -u <mqtt_user> -P <mqtt_password> -t "device/control/all" -m "{\"led1\":\"ON\",\"led2\":\"OFF\"}"
      ```
+   * *(Thay thế `<mqtt_user>` và `<mqtt_password>` bằng tài khoản MQTT được cấp quyền trên Broker).*
    * Firmware và Backend tự động chuẩn hóa dấu nháy và cập nhật trạng thái đồng bộ lên cơ sở dữ liệu và màn hình điều khiển.
 
 ---
