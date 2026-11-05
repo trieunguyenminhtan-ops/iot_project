@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -507,7 +507,7 @@
             </div>
         </div>
 
-        <!-- ================= MÀN HÌNH: CẢNH BÁO (LƯỚI 3x3: 3 GIÁ TRỊ, 3 LINE CHART, 3 BOX LED) ================= -->
+        <!-- ================= MÀN HÌNH: CẢNH BÁO (LƯỚI 3x3 KÉO DÀI HẾT MÀN HÌNH) ================= -->
         <div id="tab-warning" class="tab-content flex-col h-full w-full gap-4 overflow-y-auto custom-scroll pr-1">
             <!-- Header của tab Cảnh báo -->
             <div class="flex items-center justify-between bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-100 shrink-0">
@@ -515,7 +515,7 @@
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <i class="fas fa-exclamation-triangle text-amber-500"></i> Giám sát Cảnh báo Cảm biến Ngẫu nhiên
                     </h2>
-                    <p class="text-xs text-slate-500">Ngưỡng cảnh báo: Cảm biến 1 > 5 (max 10) · Cảm biến 2 > 50 (max 100) · Cảm biến 3 > 500 (max 1000)</p>
+                    <p class="text-xs text-slate-500">Hệ thống giám sát thời gian thực với tính năng tùy chỉnh ngưỡng cảnh báo linh hoạt</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <span id="warning-sync-status" class="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700 flex items-center gap-1.5">
@@ -524,115 +524,163 @@
                 </div>
             </div>
 
-            <!-- BỐ CỤC LƯỚI 3 CỘT X 3 HÀNG (Mỗi cột ứng với 1 cảm biến) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pb-4">
+            <!-- BỐ CỤC LƯỚI 3 CỘT (KÉO DÀI HẾT CHIỀU DÀI MÀN HÌNH) -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-5 pb-1 min-h-0">
                 <!-- CỘT 1: CẢM BIẾN 1 (0..10) -->
-                <div class="flex flex-col gap-4 bg-white p-5 rounded-xl shadow border border-slate-100">
-                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI -->
-                    <div id="warn-card-1" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 1 (0 - 10)</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span id="warn-val-1" class="text-3xl font-black text-slate-800">--</span>
-                                <span class="text-sm font-semibold text-slate-400">/ 10 đv</span>
+                <div class="flex flex-col justify-between gap-3 bg-white p-5 rounded-xl shadow border border-slate-100 h-full">
+                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI & Ô NHẬP NGƯỠNG -->
+                    <div class="flex flex-col gap-2 shrink-0">
+                        <div id="warn-card-1" class="p-3.5 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 1 (0 - 10)</p>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span id="warn-val-1" class="text-3xl font-black text-slate-800">--</span>
+                                    <span class="text-sm font-semibold text-slate-400">/ 10 đv</span>
+                                </div>
+                            </div>
+                            <div id="warn-badge-1" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
+                                Bình thường (≤ 5)
                             </div>
                         </div>
-                        <div id="warn-badge-1" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
-                            Bình thường
+
+                        <!-- Ô nhập chỉnh sửa ngưỡng cảnh báo -->
+                        <div class="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                            <label for="warn-thresh-input-1" class="font-semibold text-slate-600 flex items-center gap-1.5 cursor-pointer">
+                                <i class="fas fa-sliders-h text-blue-500"></i>
+                                <span>Ngưỡng cảnh báo:</span>
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" id="warn-thresh-input-1" value="5" min="0" max="10" step="0.5"
+                                    oninput="handleThresholdChange(1, this.value)"
+                                    class="w-16 px-2 py-1 text-xs font-bold text-center border rounded-md border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-inner" />
+                                <span class="text-xs font-semibold text-slate-500">đv</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- HÀNG 2: ĐỒ THỊ ĐƯỜNG (LINE CHART) -->
-                    <div class="flex-1 min-h-[220px] flex flex-col justify-between">
-                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between">
+                    <div class="flex-1 flex flex-col justify-between min-h-[200px] my-1">
+                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between shrink-0">
                             <span><i class="fas fa-chart-line text-blue-500 mr-1"></i>Đồ thị theo thời gian</span>
-                            <span class="text-[11px] text-red-500 font-bold">Ngưỡng: > 5</span>
+                            <span id="warn-thresh-label-1" class="text-[11px] text-red-500 font-bold">Ngưỡng: > 5</span>
                         </p>
-                        <div class="relative h-[190px] w-full bg-slate-50 rounded-lg p-2 border border-slate-100">
+                        <div class="relative flex-1 w-full min-h-[170px] bg-slate-50 rounded-lg p-2 border border-slate-100">
                             <canvas id="warn-chart-1"></canvas>
                         </div>
                     </div>
 
-                    <!-- HÀNG 3: BOX LED CẢNH BÁO 1 -->
-                    <div id="warn-led-box-1" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700">
+                    <!-- HÀNG 3: BOX LED CẢNH BÁO 1 (ĐÃ XÓA CHÂN D7) -->
+                    <div id="warn-led-box-1" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 shrink-0">
                         <div id="warn-led-bulb-1" class="w-5 h-5 rounded-full bg-slate-600 border border-slate-400 transition-all"></div>
                         <div class="text-left">
                             <p class="text-sm font-bold tracking-wide text-white">LED 1 (cảnh báo)</p>
-                            <p id="warn-led-state-1" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT (Chân D7)</p>
+                            <p id="warn-led-state-1" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- CỘT 2: CẢM BIẾN 2 (0..100) -->
-                <div class="flex flex-col gap-4 bg-white p-5 rounded-xl shadow border border-slate-100">
-                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI -->
-                    <div id="warn-card-2" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 2 (0 - 100)</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span id="warn-val-2" class="text-3xl font-black text-slate-800">--</span>
-                                <span class="text-sm font-semibold text-slate-400">/ 100 %</span>
+                <div class="flex flex-col justify-between gap-3 bg-white p-5 rounded-xl shadow border border-slate-100 h-full">
+                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI & Ô NHẬP NGƯỠNG -->
+                    <div class="flex flex-col gap-2 shrink-0">
+                        <div id="warn-card-2" class="p-3.5 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 2 (0 - 100)</p>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span id="warn-val-2" class="text-3xl font-black text-slate-800">--</span>
+                                    <span class="text-sm font-semibold text-slate-400">/ 100 %</span>
+                                </div>
+                            </div>
+                            <div id="warn-badge-2" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
+                                Bình thường (≤ 50)
                             </div>
                         </div>
-                        <div id="warn-badge-2" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
-                            Bình thường
+
+                        <!-- Ô nhập chỉnh sửa ngưỡng cảnh báo -->
+                        <div class="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                            <label for="warn-thresh-input-2" class="font-semibold text-slate-600 flex items-center gap-1.5 cursor-pointer">
+                                <i class="fas fa-sliders-h text-emerald-500"></i>
+                                <span>Ngưỡng cảnh báo:</span>
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" id="warn-thresh-input-2" value="50" min="0" max="100" step="1"
+                                    oninput="handleThresholdChange(2, this.value)"
+                                    class="w-16 px-2 py-1 text-xs font-bold text-center border rounded-md border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-inner" />
+                                <span class="text-xs font-semibold text-slate-500">%</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- HÀNG 2: ĐỒ THỊ ĐƯỜNG (LINE CHART) -->
-                    <div class="flex-1 min-h-[220px] flex flex-col justify-between">
-                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between">
+                    <div class="flex-1 flex flex-col justify-between min-h-[200px] my-1">
+                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between shrink-0">
                             <span><i class="fas fa-chart-line text-emerald-500 mr-1"></i>Đồ thị theo thời gian</span>
-                            <span class="text-[11px] text-red-500 font-bold">Ngưỡng: > 50</span>
+                            <span id="warn-thresh-label-2" class="text-[11px] text-red-500 font-bold">Ngưỡng: > 50</span>
                         </p>
-                        <div class="relative h-[190px] w-full bg-slate-50 rounded-lg p-2 border border-slate-100">
+                        <div class="relative flex-1 w-full min-h-[170px] bg-slate-50 rounded-lg p-2 border border-slate-100">
                             <canvas id="warn-chart-2"></canvas>
                         </div>
                     </div>
 
-                    <!-- HÀNG 3: BOX LED CẢNH BÁO 2 -->
-                    <div id="warn-led-box-2" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700">
+                    <!-- HÀNG 3: BOX LED CẢNH BÁO 2 (ĐÃ XÓA CHÂN D0) -->
+                    <div id="warn-led-box-2" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 shrink-0">
                         <div id="warn-led-bulb-2" class="w-5 h-5 rounded-full bg-slate-600 border border-slate-400 transition-all"></div>
                         <div class="text-left">
                             <p class="text-sm font-bold tracking-wide text-white">LED 2 (cảnh báo)</p>
-                            <p id="warn-led-state-2" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT (Chân D0)</p>
+                            <p id="warn-led-state-2" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- CỘT 3: CẢM BIẾN 3 (0..1000) -->
-                <div class="flex flex-col gap-4 bg-white p-5 rounded-xl shadow border border-slate-100">
-                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI -->
-                    <div id="warn-card-3" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 3 (0 - 1000)</p>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <span id="warn-val-3" class="text-3xl font-black text-slate-800">--</span>
-                                <span class="text-sm font-semibold text-slate-400">/ 1000 pts</span>
+                <div class="flex flex-col justify-between gap-3 bg-white p-5 rounded-xl shadow border border-slate-100 h-full">
+                    <!-- HÀNG 1: Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI & Ô NHẬP NGƯỠNG -->
+                    <div class="flex flex-col gap-2 shrink-0">
+                        <div id="warn-card-3" class="p-3.5 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 3 (0 - 1000)</p>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span id="warn-val-3" class="text-3xl font-black text-slate-800">--</span>
+                                    <span class="text-sm font-semibold text-slate-400">/ 1000 pts</span>
+                                </div>
+                            </div>
+                            <div id="warn-badge-3" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
+                                Bình thường (≤ 500)
                             </div>
                         </div>
-                        <div id="warn-badge-3" class="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600">
-                            Bình thường
+
+                        <!-- Ô nhập chỉnh sửa ngưỡng cảnh báo -->
+                        <div class="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                            <label for="warn-thresh-input-3" class="font-semibold text-slate-600 flex items-center gap-1.5 cursor-pointer">
+                                <i class="fas fa-sliders-h text-amber-500"></i>
+                                <span>Ngưỡng cảnh báo:</span>
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <input type="number" id="warn-thresh-input-3" value="500" min="0" max="1000" step="10"
+                                    oninput="handleThresholdChange(3, this.value)"
+                                    class="w-16 px-2 py-1 text-xs font-bold text-center border rounded-md border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white shadow-inner" />
+                                <span class="text-xs font-semibold text-slate-500">pts</span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- HÀNG 2: ĐỒ THỊ ĐƯỜNG (LINE CHART) -->
-                    <div class="flex-1 min-h-[220px] flex flex-col justify-between">
-                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between">
+                    <div class="flex-1 flex flex-col justify-between min-h-[200px] my-1">
+                        <p class="text-xs font-medium text-slate-500 mb-1 flex items-center justify-between shrink-0">
                             <span><i class="fas fa-chart-line text-amber-500 mr-1"></i>Đồ thị theo thời gian</span>
-                            <span class="text-[11px] text-red-500 font-bold">Ngưỡng: > 500</span>
+                            <span id="warn-thresh-label-3" class="text-[11px] text-red-500 font-bold">Ngưỡng: > 500</span>
                         </p>
-                        <div class="relative h-[190px] w-full bg-slate-50 rounded-lg p-2 border border-slate-100">
+                        <div class="relative flex-1 w-full min-h-[170px] bg-slate-50 rounded-lg p-2 border border-slate-100">
                             <canvas id="warn-chart-3"></canvas>
                         </div>
                     </div>
 
-                    <!-- HÀNG 3: BOX LED CẢNH BÁO 3 -->
-                    <div id="warn-led-box-3" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700">
+                    <!-- HÀNG 3: BOX LED CẢNH BÁO 3 (ĐÃ XÓA CHÂN D8) -->
+                    <div id="warn-led-box-3" class="warn-led-box flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 shrink-0">
                         <div id="warn-led-bulb-3" class="w-5 h-5 rounded-full bg-slate-600 border border-slate-400 transition-all"></div>
                         <div class="text-left">
                             <p class="text-sm font-bold tracking-wide text-white">LED 3 (cảnh báo)</p>
-                            <p id="warn-led-state-3" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT (Chân D8)</p>
+                            <p id="warn-led-state-3" class="text-[11px] text-slate-400 font-mono">Trạng thái: TẮT</p>
                         </div>
                     </div>
                 </div>
@@ -2078,14 +2126,68 @@
         // ================================================================
         // LOGIC MÀN HÌNH CẢNH BÁO: LINE CHART & NHÁY LED
         // ================================================================
+        // ================================================================
+        // TAB CẢNH BÁO: KHỞI TẠO ĐỒ THỊ, TÙY CHỈNH NGƯỠNG & HIỆU ỨNG NHÁY LED
+        // ================================================================
         let warnChart1 = null;
         let warnChart2 = null;
         let warnChart3 = null;
 
+        const DEFAULT_THRESHOLDS = { 1: 5, 2: 50, 3: 500 };
+        let customThresholds = { ...DEFAULT_THRESHOLDS };
+
+        try {
+            const savedThresh = localStorage.getItem('iot_custom_thresholds');
+            if (savedThresh) {
+                const parsed = JSON.parse(savedThresh);
+                if (parsed[1] !== undefined) customThresholds[1] = Number(parsed[1]);
+                if (parsed[2] !== undefined) customThresholds[2] = Number(parsed[2]);
+                if (parsed[3] !== undefined) customThresholds[3] = Number(parsed[3]);
+            }
+        } catch (e) {}
+
+        let lastWarningSensors = null;
+
+        function handleThresholdChange(sensorId, val) {
+            const num = parseFloat(val);
+            if (isNaN(num)) return;
+            const maxVal = sensorId === 1 ? 10 : (sensorId === 2 ? 100 : 1000);
+            const clamped = Math.max(0, Math.min(maxVal, num));
+            customThresholds[sensorId] = clamped;
+
+            try {
+                localStorage.setItem('iot_custom_thresholds', JSON.stringify(customThresholds));
+            } catch (e) {}
+
+            const labelEl = document.getElementById('warn-thresh-label-' + sensorId);
+            if (labelEl) labelEl.textContent = 'Ngưỡng: > ' + clamped;
+
+            const chart = sensorId === 1 ? warnChart1 : (sensorId === 2 ? warnChart2 : warnChart3);
+            if (chart && chart.data.datasets[1]) {
+                chart.data.datasets[1].data = chart.data.datasets[1].data.map(() => clamped);
+                chart.update('none');
+            }
+
+            if (lastWarningSensors) {
+                renderWarningUI(lastWarningSensors);
+            }
+        }
+
         function initWarningCharts() {
             if (warnChart1 || !document.getElementById('warn-chart-1')) return;
 
-            const chartConfig = (id, label, maxVal, step, color, threshold) => {
+            for (let i = 1; i <= 3; i++) {
+                const inputEl = document.getElementById('warn-thresh-input-' + i);
+                if (inputEl && customThresholds[i] !== undefined) {
+                    inputEl.value = customThresholds[i];
+                }
+                const labelEl = document.getElementById('warn-thresh-label-' + i);
+                if (labelEl && customThresholds[i] !== undefined) {
+                    labelEl.textContent = 'Ngưỡng: > ' + customThresholds[i];
+                }
+            }
+
+            const chartConfig = (id, label, maxVal, step, color, sensorId) => {
                 const ctx = document.getElementById(id).getContext('2d');
                 return new Chart(ctx, {
                     type: 'line',
@@ -2104,7 +2206,7 @@
                                 fill: true
                             },
                             {
-                                label: 'Ngưỡng 50%',
+                                label: 'Ngưỡng cảnh báo',
                                 data: [],
                                 borderColor: '#ef4444',
                                 borderDash: [6, 4],
@@ -2136,7 +2238,7 @@
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ctx.datasetIndex === 0 ? `${label}: ${ctx.parsed.y}` : `Ngưỡng: ${threshold}`
+                                    label: (ctx) => ctx.datasetIndex === 0 ? `${label}: ${ctx.parsed.y}` : `Ngưỡng: ${customThresholds[sensorId]}`
                                 }
                             }
                         }
@@ -2144,9 +2246,9 @@
                 });
             };
 
-            warnChart1 = chartConfig('warn-chart-1', 'Cảm biến 1', 10, 2, '#3b82f6', 5);
-            warnChart2 = chartConfig('warn-chart-2', 'Cảm biến 2', 100, 20, '#10b981', 50);
-            warnChart3 = chartConfig('warn-chart-3', 'Cảm biến 3', 1000, 200, '#f59e0b', 500);
+            warnChart1 = chartConfig('warn-chart-1', 'Cảm biến 1', 10, 2, '#3b82f6', 1);
+            warnChart2 = chartConfig('warn-chart-2', 'Cảm biến 2', 100, 20, '#10b981', 2);
+            warnChart3 = chartConfig('warn-chart-3', 'Cảm biến 3', 1000, 200, '#f59e0b', 3);
         }
 
         async function fetchWarningData() {
@@ -2160,6 +2262,7 @@
         }
 
         function renderWarningUI(sensors) {
+            lastWarningSensors = sensors;
             sensors.forEach((s, idx) => {
                 const i = idx + 1;
                 const valEl = document.getElementById('warn-val-' + i);
@@ -2168,17 +2271,19 @@
                 const boxEl = document.getElementById('warn-led-box-' + i);
                 const bulbEl = document.getElementById('warn-led-bulb-' + i);
                 const stateEl = document.getElementById('warn-led-state-' + i);
-                const pinName = i === 1 ? 'Chân D7' : (i === 2 ? 'Chân D0' : 'Chân D8');
+
+                const threshold = (customThresholds && customThresholds[i] !== undefined) ? customThresholds[i] : s.threshold;
+                const isAlert = (s.value != null) ? (s.value > threshold) : s.alert;
 
                 if (valEl) valEl.textContent = s.value != null ? s.value : '--';
 
-                if (s.alert) {
-                    // CẢNH BÁO (> 50% max): Ô giá trị đổi đỏ, Box LED nháy (keyframes CSS)
-                    if (cardEl) cardEl.className = 'p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-red-50 border-red-500 shadow-sm';
+                if (isAlert) {
+                    // CẢNH BÁO (> threshold): Ô giá trị đổi đỏ, Box LED nháy (keyframes CSS)
+                    if (cardEl) cardEl.className = 'p-3.5 rounded-xl border-2 transition-all flex items-center justify-between bg-red-50 border-red-500 shadow-sm';
                     if (valEl) valEl.className = 'text-3xl font-black text-red-600 animate-pulse';
                     if (badgeEl) {
                         badgeEl.className = 'text-xs font-bold px-2.5 py-1 rounded-md bg-red-100 text-red-700 border border-red-300 animate-pulse';
-                        badgeEl.textContent = 'CẢNH BÁO (> ' + s.threshold + ')';
+                        badgeEl.textContent = 'CẢNH BÁO (> ' + threshold + ')';
                     }
                     if (boxEl) {
                         boxEl.classList.remove('opacity-40');
@@ -2187,15 +2292,15 @@
                     if (bulbEl) bulbEl.classList.add('led-blinking');
                     if (stateEl) {
                         stateEl.className = 'text-[11px] text-red-400 font-mono font-bold animate-pulse';
-                        stateEl.textContent = 'Trạng thái: NHÁY CẢNH BÁO (' + pinName + ')';
+                        stateEl.textContent = 'Trạng thái: NHÁY CẢNH BÁO';
                     }
                 } else {
-                    // BÌNH THƯỜNG (<= 50% max): Ô xám bình thường, LED tắt
-                    if (cardEl) cardEl.className = 'p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200';
+                    // BÌNH THƯỜNG (<= threshold): Ô xám bình thường, LED tắt
+                    if (cardEl) cardEl.className = 'p-3.5 rounded-xl border-2 transition-all flex items-center justify-between bg-slate-50 border-slate-200';
                     if (valEl) valEl.className = 'text-3xl font-black text-slate-800';
                     if (badgeEl) {
                         badgeEl.className = 'text-xs font-bold px-2.5 py-1 rounded-md bg-slate-200 text-slate-600';
-                        badgeEl.textContent = 'Bình thường (≤ ' + s.threshold + ')';
+                        badgeEl.textContent = 'Bình thường (≤ ' + threshold + ')';
                     }
                     if (boxEl) {
                         boxEl.classList.remove('box-blinking', 'opacity-40');
@@ -2203,7 +2308,7 @@
                     if (bulbEl) bulbEl.classList.remove('led-blinking');
                     if (stateEl) {
                         stateEl.className = 'text-[11px] text-slate-400 font-mono';
-                        stateEl.textContent = 'Trạng thái: TẮT (' + pinName + ')';
+                        stateEl.textContent = 'Trạng thái: TẮT';
                     }
                 }
 
@@ -2212,7 +2317,7 @@
                 if (chart && Array.isArray(s.history) && s.history.length) {
                     chart.data.labels = s.history.map(p => formatTime(p.t));
                     chart.data.datasets[0].data = s.history.map(p => p.v);
-                    chart.data.datasets[1].data = s.history.map(() => s.threshold);
+                    chart.data.datasets[1].data = s.history.map(() => threshold);
                     chart.update('none');
                 }
             });
