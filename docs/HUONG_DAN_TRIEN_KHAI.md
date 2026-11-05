@@ -37,7 +37,7 @@ GitHub (`github.com`), Postman (`postman.com`), Figma (`figma.com`).
 
 ### 0.3 Phần cứng
 
-NodeMCU Lua WiFi V3 (ESP8266, chip CH340), cảm biến DHT11 (3 chân), module cảm biến ánh sáng (4 chân), 2 LED 5mm + 2 điện trở 220Ω, breadboard, dây nối, cáp micro-USB **có truyền dữ liệu**.
+NodeMCU Lua WiFi V3 (ESP8266, chip CH340), cảm biến DHT11 (3 chân), module cảm biến ánh sáng (4 chân), 5 LED 5mm (2 LED điều khiển + 3 LED cảnh báo) + 5 điện trở 220Ω, breadboard, dây nối, cáp micro-USB **có truyền dữ liệu**.
 
 ### 0.4 Mạng
 
@@ -128,12 +128,18 @@ Dự án hoàn toàn tương thích và hoạt động mượt mà trên **Antig
    mysql -u root -p -e "SELECT VERSION();"
    ```
    Nhập `MYSQL_ROOT_PASS`. Thấy số phiên bản là đạt. (Nếu chưa thêm PATH, dùng đường dẫn đầy đủ `"C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"`.)
-4. **Nạp schema** (dùng dấu `/` trong đường dẫn):
-   ```bat
-   mysql -u root -p -e "source C:/iot-project/database/schema.sql"
-   ```
-   > ⚠️ Chạy lần thứ 2 sẽ báo lỗi `already exists`. Muốn nạp lại từ đầu (**xóa hết dữ liệu**), chạy trước:
+4. **Nạp schema hoặc chạy migration** (dùng dấu `/` trong đường dẫn):
+   - **Trường hợp cài mới từ đầu:**
+     ```bat
+     mysql -u root -p -e "source C:/iot-project/database/schema.sql"
+     ```
+   - **Trường hợp đã có database và muốn bổ sung 3 cảm biến ngẫu nhiên mới:**
+     ```bat
+     mysql -u iot -p iot_project < C:/iot-project/database/migrations/001_add_random_sensors.sql
+     ```
+   > ⚠️ Chạy lần thứ 2 `schema.sql` sẽ báo lỗi `already exists`. Muốn nạp lại từ đầu (**xóa hết dữ liệu**), chạy trước:
    > `mysql -u root -p -e "DROP DATABASE IF EXISTS iot_project;"`
+   > File migration `001_add_random_sensors.sql` là idempotent (chạy nhiều lần an toàn, không sinh lỗi, không trùng lặp bản ghi).
    > Nếu thấy cảnh báo "Integer display width is deprecated" thì bỏ qua, không ảnh hưởng.
 5. **Tạo user riêng cho Node-RED** (đổi `MYSQL_IOT_PASS`):
    ```bat
@@ -191,6 +197,12 @@ Dự án hoàn toàn tương thích và hoạt động mượt mà trên **Antig
 4. **Kiểm tra khi chưa cắm phần cứng.** Giả lập NodeMCU gửi dữ liệu (trong CMD, `\"` là cách viết dấu `"` bên trong JSON):
    ```bat
    mosquitto_pub -h localhost -p 8000 -u MQTT_USER -P MQTT_PASS -t data/sensor -m "{\"temp\":28.5,\"hum\":65,\"light\":320}"
+
+   Giả lập NodeMCU gửi 3 cảm biến ngẫu nhiên để kiểm tra nháy LED cảnh báo và ô giá trị đổi màu đỏ trên Web:
+   ```bat
+   mosquitto_pub -h localhost -p 8000 -u MQTT_USER -P MQTT_PASS -t data/random -m "{\"s1\":6,\"s2\":90,\"s3\":300}"
+   ```
+   *(Kỳ vọng: LED 1 và LED 2 nháy, LED 3 tắt; trên Web box LED 1 và LED 2 nháy đỏ, ô giá trị đỏ)*
    mysql -u iot -p -h 127.0.0.1 iot_project -e "SELECT * FROM data_sensors;"
    ```
    Thấy 3 dòng (nhiệt độ, độ ẩm, ánh sáng) là đạt. Mở `http://localhost:8800/dashboard.html` sẽ thấy 28.5 / 65 / 320 trên 3 thẻ số liệu.
@@ -208,12 +220,15 @@ Nên tắt chế độ ngủ để không bị ngắt giữa buổi demo: *Setti
 
 ## 2.1 Đấu nối phần cứng
 
-| Linh kiện | Chân NodeMCU |
-|---|---|
-| DHT11: VCC / GND / DATA | 3V3 / GND / **D2** (GPIO4) |
-| Cảm biến ánh sáng: VCC / GND / AO | 3V3 / GND / **A0** (không dùng chân DO) |
-| LED 1: chân dài qua điện trở 220Ω | **D5** (GPIO14); chân ngắn nối GND |
-| LED 2: chân dài qua điện trở 220Ω | **D6** (GPIO12); chân ngắn nối GND |
+| Linh kiện | Chân NodeMCU | Vai trò & Ràng buộc phần cứng |
+|---|---|---|
+| DHT11: VCC / GND / DATA | 3V3 / GND / **D2** (GPIO4) | Đo nhiệt độ & độ ẩm (5s/lần) |
+| Cảm biến ánh sáng: VCC / GND / AO | 3V3 / GND / **A0** (không dùng chân DO) | Đo cường độ ánh sáng (ADC 0..1023) |
+| LED 1: chân dài qua điện trở 220Ω | **D5** (GPIO14); chân ngắn nối GND | Thiết bị chấp hành 1 |
+| LED 2: chân dài qua điện trở 220Ω | **D6** (GPIO12); chân ngắn nối GND | Thiết bị chấp hành 2 |
+| LED Cảnh báo 1: chân dài qua trở 220Ω | **D7** (GPIO13); chân ngắn nối GND | Nháy cảnh báo khi cảm biến 1 > 5 (50% max) |
+| LED Cảnh báo 2: chân dài qua trở 220Ω | **D0** (GPIO16); chân ngắn nối GND | Nháy cảnh báo khi cảm biến 2 > 50 (50% max, chỉ digitalWrite) |
+| LED Cảnh báo 3: chân dài qua trở 220Ω | **D8** (GPIO15); chân ngắn nối GND | Nháy cảnh báo khi cảm biến 3 > 500 (50% max, **GPIO15 phải ở mức LOW lúc boot nên chỉ nối cathode về GND qua trở 220Ω, tuyệt đối không dùng pull-up**) |
 
 Tất cả GND nối chung trên breadboard.
 

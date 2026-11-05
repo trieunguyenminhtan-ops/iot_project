@@ -653,6 +653,56 @@
           "response": []
         },
         {
+          "name": "Data sensor - Lọc theo loại Ngẫu nhiên",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Tất cả bản ghi trả về đều là random\", function () {",
+                  "    pm.expect(j.rows).to.be.an('array');",
+                  "    j.rows.forEach(function(r) { pm.expect(r.sensor_type).to.eql(\"random\"); });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sensors?type=random&page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "random",
+                  "description": "Lọc theo cảm biến ngẫu nhiên RND1..RND3"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lọc dữ liệu cảm biến theo loại Ngẫu nhiên (sensor_type = 'random', bao gồm RND1, RND2, RND3)."
+          },
+          "response": []
+        },
+        {
           "name": "Data sensor - Lỗi: Thiếu Authorization khi xem dữ liệu",
           "event": [
             {
@@ -1731,7 +1781,114 @@
       ]
     },
     {
-      "name": "6. Profile & Đăng xuất",
+      "name": "6. Cảnh báo (Warnings)",
+      "item": [
+        {
+          "name": "Cảnh báo - Lấy dữ liệu 3 cảm biến & trạng thái nháy LED (Có Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 và ok = true\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.ok).to.eql(true);",
+                  "});",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Trả về danh sách 3 cảm biến ngẫu nhiên (RND1, RND2, RND3)\", function () {",
+                  "    pm.expect(Array.isArray(j.sensors)).to.eql(true);",
+                  "    pm.expect(j.sensors.length).to.eql(3);",
+                  "    var codes = j.sensors.map(function(s) { return s.code; });",
+                  "    pm.expect(codes).to.include.members([\"RND1\", \"RND2\", \"RND3\"]);",
+                  "});",
+                  "pm.test(\"Mỗi cảm biến có min, max, threshold đúng 50% max\", function () {",
+                  "    j.sensors.forEach(function(s) {",
+                  "        pm.expect(s).to.include.keys(\"code\", \"name\", \"min\", \"max\", \"threshold\", \"alert\", \"history\");",
+                  "        pm.expect(s.threshold).to.eql(s.max * 0.5);",
+                  "    });",
+                  "});",
+                  "pm.test(\"Lịch sử đo tối đa 20 điểm và cờ alert đúng ngưỡng (> 50% max)\", function () {",
+                  "    j.sensors.forEach(function(s) {",
+                  "        pm.expect(Array.isArray(s.history)).to.eql(true);",
+                  "        pm.expect(s.history.length).to.be.at.most(20);",
+                  "        if (s.value !== null && s.value !== undefined) {",
+                  "            pm.expect(s.alert).to.eql(s.value > s.threshold);",
+                  "        }",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "warnings"
+              ]
+            },
+            "description": "Lấy thông tin và trạng thái cảnh báo của 3 cảm biến ngẫu nhiên RND1, RND2, RND3. Trả về cấu trúc min, max, threshold (=50% max), giá trị hiện tại, cờ alert và tối đa 20 điểm lịch sử đo gần nhất."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Lỗi: Thiếu Authorization khi xem cảnh báo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Báo lỗi thiếu token xác thực\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.ok).to.eql(false);",
+                  "    pm.expect(json.error).to.include(\"Authorization\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "warnings"
+              ]
+            },
+            "description": "Kiểm tra bảo mật API: Truy cập endpoint /api/warnings mà không truyền token xác thực -> Hệ thống chặn và trả về HTTP 401 Unauthorized."
+          },
+          "response": []
+        }
+      ],
+      "description": "Các API phục vụ màn hình Cảnh báo (3 cảm biến ngẫu nhiên, ngưỡng 50% max, LED nháy cảnh báo)."
+    },
+    {
+      "name": "7. Profile & Đăng xuất",
       "description": "Xem hồ sơ sinh viên và đăng xuất kết thúc phiên làm việc.",
       "item": [
         {

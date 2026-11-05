@@ -12,6 +12,8 @@
 // ==== TOPIC ====
 // Topic 1: dữ liệu cảm biến
 const char* topic_data = "data/sensor";
+// Topic dữ liệu cảm biến ngẫu nhiên
+const char* topic_random = "data/random";
 
 // Topic 2: điều khiển
 // - Mỗi LED có 1 subtopic riêng để điều khiển RIÊNG LẺ từng đèn
@@ -31,6 +33,11 @@ const char* topic_response = "device/response";
 #define LED1_PIN 14     // D5 trên board NodeMCU -> LED 1 (+)
 #define LED2_PIN 12     // D6 trên board NodeMCU -> LED 2 (+)
 
+// 3 LED cảnh báo cho 3 cảm biến ngẫu nhiên (mỗi LED nối tiếp điện trở 220Ω, cathode về GND):
+#define ALERT_LED1_PIN 13 // D7 trên board NodeMCU (LED cảnh báo cảm biến 1)
+#define ALERT_LED2_PIN 16 // D0 trên board NodeMCU (LED cảnh báo cảm biến 2) - GPIO16 chỉ dùng digitalWrite, không dùng PWM/interrupt
+#define ALERT_LED3_PIN 15 // D8 trên board NodeMCU (LED cảnh báo cảm biến 3) - GPIO15 phải ở mức LOW lúc boot, nối LED về GND, không thêm pull-up
+
 // ID định danh riêng cho từng thiết bị, dùng trong field "id" của phản hồi
 #define DEVICE_ID_NODE 0
 #define DEVICE_ID_LED1 1
@@ -42,6 +49,14 @@ PubSubClient client(espClient);
 
 unsigned long lastMsg = 0;
 const unsigned long INTERVAL = 5000; // gửi dữ liệu mỗi 5 giây
+
+// Trạng thái cảnh báo và cơ chế nháy LED không chặn (non-blocking)
+bool alert1 = false;
+bool alert2 = false;
+bool alert3 = false;
+unsigned long lastBlinkTime = 0;
+const unsigned long BLINK_INTERVAL = 150; // Chu kỳ nháy ~300ms (150ms bật, 150ms tắt)
+bool blinkState = false;
 
 void setup_wifi() {
   delay(10);
@@ -154,6 +169,18 @@ void setup() {
   Serial.println("\n=== NodeMCU ESP8266 Khoi Dong ===");
   pinMode(LED1_PIN, OUTPUT);
   pinMode(LED2_PIN, OUTPUT);
+
+  // Cấu hình 3 LED cảnh báo
+  pinMode(ALERT_LED1_PIN, OUTPUT);
+  pinMode(ALERT_LED2_PIN, OUTPUT);
+  pinMode(ALERT_LED3_PIN, OUTPUT);
+  digitalWrite(ALERT_LED1_PIN, LOW);
+  digitalWrite(ALERT_LED2_PIN, LOW);
+  digitalWrite(ALERT_LED3_PIN, LOW);
+
+  // Khởi tạo hạt giống ngẫu nhiên không lặp lại
+  randomSeed(analogRead(A0) ^ micros());
+
   dht.begin();
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
@@ -167,24 +194,50 @@ void loop() {
   }
   client.loop();
 
+  // Nháy LED cảnh báo bằng millis() (chu kỳ ~300ms, non-blocking)
+  unsigned long nowBlink = millis();
+  if (nowBlink - lastBlinkTime >= BLINK_INTERVAL) {
+    lastBlinkTime = nowBlink;
+    blinkState = !blinkState;
+
+    digitalWrite(ALERT_LED1_PIN, alert1 ? (blinkState ? HIGH : LOW) : LOW);
+    digitalWrite(ALERT_LED2_PIN, alert2 ? (blinkState ? HIGH : LOW) : LOW);
+    digitalWrite(ALERT_LED3_PIN, alert3 ? (blinkState ? HIGH : LOW) : LOW);
+  }
+
   unsigned long now = millis();
   if (now - lastMsg > INTERVAL) {
     lastMsg = now;
 
+    // 1. Đọc và gửi dữ liệu cảm biến thực tế (DHT11, LDR)
     float h = dht.readHumidity();
     float t = dht.readTemperature();
     int light = 1023 - analogRead(LIGHT_PIN); // Đảo chiều: Càng sáng số càng lớn (0-1023)
 
-    if (isnan(h) || isnan(t)) {
+    if (!isnan(h) && !isnan(t)) {
+      String payload = "{\"temp\":" + String(t, 1) +
+                        ",\"hum\":" + String(h, 1) +
+                        ",\"light\":" + String(light) + "}";
+      client.publish(topic_data, payload.c_str());
+      Serial.println("Da gui [" + String(topic_data) + "]: " + payload);
+    } else {
       Serial.println("Loi doc cam bien DHT11!");
-      return;
     }
 
-    String payload = "{\"temp\":" + String(t, 1) +
-                      ",\"hum\":" + String(h, 1) +
-                      ",\"light\":" + String(light) + "}";
+    // 2. Sinh và gửi 3 giá trị cảm biến ngẫu nhiên
+    int s1 = random(0, 11);    // 0..10
+    int s2 = random(0, 101);   // 0..100
+    int s3 = random(0, 1001);  // 0..1000
 
-    client.publish(topic_data, payload.c_str());
-    Serial.println("Da gui: " + payload);
+    // Cập nhật trạng thái cảnh báo (> 50% max)
+    alert1 = (s1 > 5);
+    alert2 = (s2 > 50);
+    alert3 = (s3 > 500);
+
+    String payloadRandom = "{\"s1\":" + String(s1) +
+                           ",\"s2\":" + String(s2) +
+                           ",\"s3\":" + String(s3) + "}";
+    client.publish(topic_random, payloadRandom.c_str());
+    Serial.println("Da gui [" + String(topic_random) + "]: " + payloadRandom);
   }
 }

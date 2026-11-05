@@ -28,6 +28,9 @@ flowchart TD
         LDR["Quang trở LDR<br/>(Cường độ ánh sáng)"] -->|ADC0 / A0| NodeMCU
         NodeMCU -->|GPIO14 / D5| LED1["Đèn LED 1 (Trở 220Ω)"]
         NodeMCU -->|GPIO12 / D6| LED2["Đèn LED 2 (Trở 220Ω)"]
+        NodeMCU -->|GPIO13 / D7| ALERT_LED1["LED Cảnh báo 1 (Trở 220Ω)"]
+        NodeMCU -->|GPIO16 / D0| ALERT_LED2["LED Cảnh báo 2 (Trở 220Ω)"]
+        NodeMCU -->|GPIO15 / D8| ALERT_LED3["LED Cảnh báo 3 (Trở 220Ω)"]
     end
 
     subgraph Network_Layer ["2. Lớp Truyền thông & Mạng (Network Layer)"]
@@ -41,35 +44,42 @@ flowchart TD
 
     subgraph Application_Layer ["4. Lớp Ứng dụng & Trực quan (Application Layer)"]
         SPA["Giao diện Web SPA (dashboard.html)<br/>(HTML5 · Tailwind CSS · Chart.js)"]
-        Postman["Kiểm thử tự động Postman Runner<br/>(31 Requests · 66 Test Assertions)"]
+        Postman["Kiểm thử tự động Postman Runner<br/>(34 Requests · 74 Test Assertions)"]
     end
 
-    NodeMCU <-->|MQTT Publish / Subscribe| Broker
-    Broker <-->|MQTT in / out Nodes| NodeRED
-    NodeRED <-->|SQL Queries / mysql pool| DB
-    SPA <-->|HTTP REST Polling / POST Control| NodeRED
-    Postman -->|REST API Testing & RBAC| NodeRED
+    NodeMCU ---|"MQTT Publish / Subscribe"| Broker
+    Broker ---|"MQTT in / out Nodes"| NodeRED
+    NodeRED ---|"SQL Queries / mysql pool"| DB
+    SPA ---|"HTTP REST Polling / POST Control"| NodeRED
+    Postman --->|"REST API Testing & RBAC"| NodeRED
 ```
 
-### 🔄 Hai luồng dữ liệu cốt lõi:
+### 🔄 Các luồng dữ liệu cốt lõi:
 
 * **1. Luồng thu thập dữ liệu (Telemetry Stream):**
   > `Cảm biến (DHT11, LDR)` ➔ *(định kỳ 5s/lần)* ➔ `NodeMCU ESP8266` ➔ *(MQTT: data/sensor)* ➔ `Mosquitto Broker` ➔ `Node-RED` ➔ *(INSERT SQL)* ➔ `MySQL` ➔ *(GET /api/dashboard)* ➔ `Web SPA (Card & Chart)`
 
-* **2. Luồng điều khiển thiết bị có phản hồi xác nhận (Control & ACK Stream):**
-  > `Thao tác Web / REST API` ➔ *(POST /api/control)* ➔ `Node-RED (actions: pending)` ➔ *(MQTT: device/control/*)* ➔ `NodeMCU (thực thi chân GPIO)` ➔ *(device/response)* ➔ `Node-RED (actions: success, response_ms)` ➔ `Web SPA (Đồng bộ công tắc)`
+* **2. Luồng cảm biến giả lập & cảnh báo ngưỡng (Random & Warning Stream):**
+  > `NodeMCU ESP8266` ➔ *(random s1: 0..10, s2: 0..100, s3: 0..1000)* ➔ `MQTT: data/random` ➔ `Node-RED` ➔ *(INSERT SQL data_sensors)* ➔ `GET /api/warnings` ➔ `Web SPA (Tab Cảnh báo 3x3: số đo, biểu đồ, box LED nháy)`  
+  > *(Đồng thời: nếu giá trị > 50% max, LED tương ứng D7, D0, D8 trên phần cứng nháy chu kỳ ~300ms bằng millis())*
+
+* **3. Luồng điều khiển thiết bị có phản hồi xác nhận (Control & ACK Stream):**
+  > `Thao tác Web / REST API` ➔ *(POST /api/control)* ➔ `Node-RED (actions: pending)` ➔ *(MQTT: device/control/*)` ➔ `NodeMCU (thực thi chân GPIO)` ➔ *(device/response)* ➔ `Node-RED (actions: success, response_ms)` ➔ `Web SPA (Đồng bộ công tắc)`
 
 ---
 
 ## 🔌 SƠ ĐỒ ĐẤU NỐI PHẦN CỨNG (PINOUT)
 
-| Linh kiện | Chân linh kiện | Chân NodeMCU v3 | Vai trò kỹ thuật & Ràng buộc |
+| Linh kiện | Chân linh kiện | Chân NodeMCU v3 | Vai trò kỹ thuật & Ràng buộc phần cứng |
 |---|---|---|---|
 | **Cảm biến DHT11** | `VCC` / `GND` / `DATA` | `3V3` / `GND` / **`D2`** (GPIO4) | Đo Nhiệt độ (°C) và Độ ẩm (%), chu kỳ lấy mẫu 5s/lần |
 | **Quang trở LDR** | `VCC` / `GND` / `AO` | `3V3` / `GND` / **`A0`** (ADC0) | Đo cường độ ánh sáng, dải ADC: 0 – 1023 |
 | **Đèn LED 1** | (+) Anode / (-) Cathode | **`D5`** (GPIO14) / `GND` | Thiết bị chấp hành 1 (mắc nối tiếp điện trở hạn dòng 220Ω) |
 | **Đèn LED 2** | (+) Anode / (-) Cathode | **`D6`** (GPIO12) / `GND` | Thiết bị chấp hành 2 (mắc nối tiếp điện trở hạn dòng 220Ω) |
-| **Nguồn cấp** | Cáp Micro-USB | Cổng **`COM6`** | Cấp nguồn 5V/1A, giao tiếp nối tiếp Serial Baudrate **115200** |
+| **LED Cảnh báo 1** | (+) Anode / (-) Cathode | **`D7`** (GPIO13) / `GND` | Nháy cảnh báo khi cảm biến 1 > 5 (nối tiếp trở 220Ω) |
+| **LED Cảnh báo 2** | (+) Anode / (-) Cathode | **`D0`** (GPIO16) / `GND` | Nháy cảnh báo khi cảm biến 2 > 50 (nối tiếp trở 220Ω, chỉ dùng `digitalWrite`, không dùng PWM/ngắt) |
+| **LED Cảnh báo 3** | (+) Anode / (-) Cathode | **`D8`** (GPIO15) / `GND` | Nháy cảnh báo khi cảm biến 3 > 500 (nối tiếp trở 220Ω, **ràng buộc: GPIO15 phải ở mức LOW lúc boot nên chỉ nối cathode về GND qua trở 220Ω, tuyệt đối không dùng pull-up**) |
+| **Nguồn cấp & Nạp** | Cáp Micro-USB | Cổng **`COM6`** | Cấp nguồn 5V/1A, giao tiếp nối tiếp Serial Baudrate **115200** |
 
 ---
 
@@ -83,6 +93,7 @@ flowchart TD
 | Topic | Chiều truyền | QoS | Nội dung Payload JSON / Chuỗi | Mô tả chi tiết |
 |---|---|:---:|---|---|
 | `data/sensor` | NodeMCU → Broker | 0 | `{"temp": 28.5, "hum": 65.0, "light": 320}` | Gửi định kỳ 5s/lần thông số nhiệt độ, độ ẩm, ánh sáng |
+| `data/random` | NodeMCU → Broker | 0 | `{"s1": 6, "s2": 90, "s3": 300}` | Gửi định kỳ 5s/lần giá trị 3 cảm biến giả lập (s1: 0..10, s2: 0..100, s3: 0..1000) |
 | `device/control/led1` | Node-RED / CLI → NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 1 |
 | `device/control/led2` | Node-RED / CLI → NodeMCU | 1 | `ON` hoặc `OFF` | Lệnh điều khiển độc lập Đèn LED 2 |
 | `device/control/all` | Node-RED / CLI → NodeMCU | 1 | `{"led1":"ON","led2":"OFF"}` | Lệnh điều khiển đồng thời cả 2 đèn trong 1 bản tin duy nhất |
@@ -150,6 +161,20 @@ erDiagram
     }
 ```
 
+### Danh mục Cảm biến trong bảng `sensors`:
+1. **ID 1**: `DHT11_TEMP` — Cảm biến Nhiệt độ (`temperature`, đơn vị: `°C`)
+2. **ID 2**: `DHT11_HUM` — Cảm biến Độ ẩm (`humidity`, đơn vị: `%`)
+3. **ID 3**: `LDR_LIGHT` — Cảm biến Ánh sáng (`light`, đơn vị: `lux`)
+4. **ID 4**: `RND1` — Cảm biến Ngẫu nhiên 1 (`random`, dải 0..10, ngưỡng 5, đơn vị: `đv`)
+5. **ID 5**: `RND2` — Cảm biến Ngẫu nhiên 2 (`random`, dải 0..100, ngưỡng 50, đơn vị: `%`)
+6. **ID 6**: `RND3` — Cảm biến Ngẫu nhiên 3 (`random`, dải 0..1000, ngưỡng 500, đơn vị: `pts`)
+
+### Quản lý Migration Idempotent:
+File migration được đặt tại: `database/migrations/001_add_random_sensors.sql` (được thiết kế an toàn, chạy lặp lại nhiều lần không sinh lỗi và không trùng lặp bản ghi):
+```sql
+mysql -u iot -p iot_project < database/migrations/001_add_random_sensors.sql
+```
+
 ---
 
 ## 🌐 DANH MỤC RESTFUL API (NODE-RED BACKEND PORT 8800)
@@ -157,10 +182,11 @@ erDiagram
 | Phương thức | Đường dẫn API | Chức năng nghiệp vụ | Quyền truy cập | Mã trạng thái HTTP |
 |:---:|---|---|:---:|:---:|
 | `POST` | `/api/login` | Đăng nhập tài khoản, sinh Bearer Token lưu phiên | Công khai | `200 OK`, `400 Bad`, `401 Unauth` |
-| `POST` | `/api/logout` | Đăng xuất phiên làm việc hiện tại | Đã đăng nhập | `200 OK`, `401 Unauth` |
+| `POST` | `/api/logout` | Đăng xuất phiên làm việc hiện tại, hủy token | Đã đăng nhập | `200 OK`, `401 Unauth` |
 | `GET` | `/api/me` | Lấy thông tin tài khoản đang kết nối | Đã đăng nhập | `200 OK`, `401 Unauth` |
 | `GET` | `/api/dashboard` | Lấy số liệu cảm biến mới nhất, trạng thái đèn và 20 điểm vẽ biểu đồ (alias: `/api/dashboard/summary`) | Công khai (Viewer) | `200 OK` |
-| `GET` | `/api/sensors` | Tra cứu dữ liệu cảm biến: lọc loại, tìm kiếm theo ngày giờ/giá trị, phân trang | Admin / User | `200 OK`, `401 Unauth` |
+| `GET` | `/api/warnings` | Lấy thông tin 3 cảm biến ngẫu nhiên, ngưỡng 50%, cờ `alert` và tối đa 20 điểm vẽ đồ thị cảnh báo | Admin / User | `200 OK`, `401 Unauth` |
+| `GET` | `/api/sensors` | Tra cứu dữ liệu cảm biến (lọc theo `temperature`, `humidity`, `light`, `random`, tìm kiếm ngày giờ/giá trị, phân trang) | Admin / User | `200 OK`, `401 Unauth` |
 | `GET` | `/api/actions` | Tra cứu nhật ký điều khiển: lọc thiết bị/hành động/trạng thái, phân trang | Admin / User | `200 OK`, `401 Unauth` |
 | `POST` | `/api/control` | Điều khiển bật/tắt đèn: `{"device":"led1","action":"ON"}` | **Admin / User** | `200 OK`, `400 Bad`, `403 Forbidden` (Viewer), `504 Timeout` |
 | `GET` | `/api/profile` | Xem thông tin hồ sơ sinh viên thực hiện đề tài | **Duy nhất Admin** | `200 OK`, `401 Unauth`, `403 Forbidden` |
@@ -175,38 +201,38 @@ Hệ thống quản lý xác thực bằng **Bearer Token** truyền qua HTTP He
 |---|:---:|:---:|:---:|
 | **Xem Dashboard (Cards & Chart)** | ✅ Cho phép xem | ✅ Cho phép xem | ✅ Cho phép xem |
 | **Bật/Tắt công tắc đèn (LED 1 & LED 2)** | ❌ **Bị khóa (Disable)** | ✅ **Được điều khiển** | ✅ **Toàn quyền điều khiển** |
-| **Tra cứu tab Data sensor & Bộ lọc** | ❌ Chặn truy cập | ✅ Tra cứu & Lọc | ✅ Toàn quyền truy vấn |
+| **Xem màn hình Cảnh báo (Tab Cảnh báo 3x3)** | ❌ Chặn truy cập | ✅ Xem đầy đủ & Đồ thị | ✅ Toàn quyền xem |
+| **Tra cứu tab Data sensor & Bộ lọc (kể cả ngẫu nhiên)** | ❌ Chặn truy cập | ✅ Tra cứu & Lọc | ✅ Toàn quyền truy vấn |
 | **Tra cứu tab Action history & Lịch sử** | ❌ Chặn truy cập | ✅ Tra cứu & Lọc | ✅ Toàn quyền truy vấn |
 | **Xem màn hình Profile sinh viên** | ❌ Chặn truy cập | ❌ Chặn truy cập | ✅ **Duy nhất Admin** |
 | **Yêu cầu mã Bearer Token khi gọi API** | Không có token | Bắt buộc Bearer Token | Bắt buộc Bearer Token |
 
 ### Tài khoản thử nghiệm mẫu:
 * **Admin**: `admin` / `admin123` (Toàn quyền quản trị hệ thống).
-* **User**: `user` / `user123` (Người dùng có quyền điều khiển và tra cứu).
+* **User**: `user` / `user123` (Người dùng có quyền điều khiển, xem cảnh báo và tra cứu).
 * **Viewer**: Mặc định khi chưa đăng nhập hoặc bấm Đăng xuất (Chỉ xem Dashboard).
 
 ---
 
-## 🧪 KIỂM THỬ TỰ ĐỘNG HÓA POSTMAN (66/66 TESTS PASSED)
+## 🧪 KIỂM THỬ TỰ ĐỘNG HÓA POSTMAN (74/74 TESTS PASSED)
 
-Toàn bộ 31 kịch bản kiểm thử RESTful API được đóng gói trong collection [`docs/postman/IoT_Dashboard_API.postman_collection.json`](docs/postman/IoT_Dashboard_API.postman_collection.json). Khi thực thi tự động qua **Postman Collection Runner**:
+Toàn bộ 34 kịch bản kiểm thử RESTful API được đóng gói trong collection [`docs/postman/IoT_Dashboard_API.postman_collection.json`](docs/postman/IoT_Dashboard_API.postman_collection.json). Khi thực thi tự động qua **Postman Collection Runner** / **Postman CLI**:
 
-* **Tổng số Request:** 31 requests
-* **Tổng số kiểm thử (pm.test assertions):** **66/66 Passed (100%)**
-* **Thời gian đáp ứng trung bình:** khoảng 64 ms (phản hồi tức thời)
+* **Tổng số Request:** **34 requests**
+* **Tổng số kiểm thử (pm.test assertions):** **74/74 Passed (100%)**
+* **Thời gian đáp ứng trung bình:** khoảng 45 ms (phản hồi tức thời)
 * **Tỷ lệ lỗi (Errors/Failed):** **0%**
 
 ```text
-Iter 1: [POST] /api/login (Admin)                -> 200 OK (2 tests passed)
-Iter 2: [GET]  /api/me                           -> 200 OK (2 tests passed)
-Iter 3: [POST] /api/login (User)                 -> 200 OK (2 tests passed)
-Iter 4: [GET]  /api/dashboard                    -> 200 OK (5 tests passed)
-Iter 5-12: [GET] /api/sensors (Filter, Search, 401) -> 200 OK / 401 (16 tests passed)
-Iter 13-22: [GET] /api/actions (Filter, Search, 401) -> 200 OK / 401 (20 tests passed)
-Iter 23-28: [POST] /api/control (ON, OFF, 400, 401)  -> 200 OK / 400 / 401 (12 tests passed)
-Iter 29-31: [GET/POST] /api/profile, /api/logout     -> 200 OK / 401 (7 tests passed)
+Folder 1. Đăng nhập & Xác thực (3 requests, 6 assertions passed)
+Folder 2. Dashboard (1 request, 5 assertions passed)
+Folder 3. Data sensor (9 requests, 18 assertions passed - bao gồm lọc cảm biến ngẫu nhiên)
+Folder 4. Action history (10 requests, 20 assertions passed)
+Folder 5. Điều khiển thiết bị (6 requests, 12 assertions passed)
+Folder 6. Cảnh báo (Warnings) (2 requests, 6 assertions passed - kiểm tra cấu trúc, 20 điểm, cờ alert và 401 khi thiếu token)
+Folder 7. Profile & Đăng xuất (3 requests, 7 assertions passed)
 --------------------------------------------------------------------------------------
-TOTAL: 31 Requests | 66 Test Assertions | 0 Failures | 0 Errors
+TOTAL: 34 Requests | 74 Test Assertions | 0 Failures | 0 Errors (100% Passed)
 ```
 
 ---
@@ -223,19 +249,21 @@ D:\iot-project\
 │
 ├── firmware/                         # Mã nguồn nhúng vi điều khiển NodeMCU
 │   ├── src/
-│   │   └── main.cpp                  # Code C++ chính: đọc DHT11, LDR, điều khiển LED, xử lý MQTT & JSON
+│   │   └── main.cpp                  # Đọc DHT11, LDR, tạo 3 số random, điều khiển LED1/LED2, nháy 3 LED cảnh báo
 │   └── include/
-│       ├── secrets.h                 # Cấu hình thông tin mạng WiFi, MQTT Broker (nội bộ)
+│       ├── secrets.h                 # Cấu hình thông tin mạng WiFi, MQTT Broker (nội bộ, không commit)
 │       └── secrets.example.h         # Mẫu cấu hình WiFi & MQTT mẫu
 │
 ├── database/
-│   └── schema.sql                    # Script tạo 5 bảng MySQL và dữ liệu mẫu (users, devices, sensors, ...)
+│   ├── migrations/
+│   │   └── 001_add_random_sensors.sql # Migration idempotent thêm 3 cảm biến ngẫu nhiên RND1..RND3
+│   └── schema.sql                    # Script tạo 5 bảng MySQL và dữ liệu mẫu đầy đủ
 │
 ├── node-red/
-│   └── flow_iot_all.json             # Toàn bộ luồng backend: MQTT subscribe, MySQL pool, REST API, Auth RBAC
+│   └── flow_iot_all.json             # Toàn bộ luồng backend: MQTT subscribe data/sensor & data/random, REST API
 │
 ├── frontend/                         # Ứng dụng Web Single Page Application (SPA)
-│   ├── dashboard.html                # Giao diện chính: Dashboard, Data sensor, Action history, Profile, Auth modal
+│   ├── dashboard.html                # Giao diện chính: Dashboard, Cảnh báo 3x3, Data sensor, Action history, Profile
 │   ├── architecture_diagram.html     # Sơ đồ kiến trúc tương tác trực quan
 │   ├── database_diagram.html         # Sơ đồ cơ sở dữ liệu tương tác trực quan
 │   └── *.svg                         # Bản vẽ kiến trúc định dạng vector
@@ -243,7 +271,7 @@ D:\iot-project\
 ├── docs/                             # Tài liệu kỹ thuật dự án
 │   ├── HUONG_DAN_TRIEN_KHAI.md       # Cẩm nang cài đặt và triển khai chi tiết từ A-Z trên Windows 11
 │   └── postman/                      # Bộ công cụ kiểm thử tự động Postman
-│       ├── IoT_Dashboard_API.postman_collection.json
+│       ├── IoT_Dashboard_API.postman_collection.json # 34 Requests, 74 Assertions
 │       └── IoT_Localhost.postman_environment.json
 │
 └── scripts/windows/
@@ -266,10 +294,11 @@ Mở Command Prompt hoặc MySQL Workbench và thực thi:
 ```sql
 SOURCE D:/iot-project/database/schema.sql;
 ```
+*(Nếu cơ sở dữ liệu đã tồn tại, chạy file migration: `SOURCE D:/iot-project/database/migrations/001_add_random_sensors.sql;`)*
 
 ### 3. Biên dịch và nạp Firmware lên NodeMCU
 1. Cắm cáp Micro-USB nối bo mạch NodeMCU vào cổng máy tính (Ví dụ: `COM6`).
-2. Mở thư mục `D:\iot-project` trong IDE, mở terminal chạy lệnh:
+2. Mở thư mục dự án trong IDE, mở terminal chạy lệnh:
 ```powershell
 # Biên dịch mã nguồn
 & "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run
@@ -295,7 +324,7 @@ Mở trình duyệt Google Chrome và truy cập:
 ## 🛠️ CƠ CHẾ CHỊU LỖI & TÍNH NĂNG NỔI BẬT
 
 1. **Cảnh báo mất kết nối NodeMCU (Heartbeat & LWT Alert):**
-   * Nếu sau **10 giây** giao diện không nhận được dữ liệu cảm biến từ NodeMCU (do mất nguồn, đứt cáp hoặc mất sóng WiFi), giao diện Web lập tức xuất hiện **Thanh cảnh báo đỏ nhấp nháy (`#nodemcu-disconnect-alert`)** kèm hiệu ứng `animate-pulse`. Khi thiết bị online trở lại, thanh cảnh báo tự động ẩn đi tức thời.
+   * Nếu sau **10 giây** giao diện không nhận được dữ liệu cảm biến từ NodeMCU (do mất nguồn, đứt cáp hoặc mất sóng WiFi), giao diện Web lập tức xuất hiện **Thanh cảnh báo đỏ nhấp nháy (`#nodemcu-disconnect-alert`)** kèm hiệu ứng `animate-pulse`, đồng thời mờ giao diện và dừng nháy các box cảnh báo. Khi thiết bị online trở lại, thanh cảnh báo tự động ẩn đi tức thời.
 2. **Cơ chế Timeout chống treo lệnh điều khiển (5000ms):**
    * Khi người dùng phát lệnh điều khiển nhưng mạch phần cứng đang offline, sau 5 giây Node-RED tự động cập nhật bản ghi trong bảng `actions` sang trạng thái `timeout`, triệt tiêu hoàn toàn lỗi kẹt trạng thái `pending` vĩnh viễn.
 3. **Đồng bộ hai chiều và Khôi phục trạng thái (State Persistence):**
@@ -307,6 +336,12 @@ Mở trình duyệt Google Chrome và truy cập:
      ```
    * *(Thay thế `<mqtt_user>` và `<mqtt_password>` bằng tài khoản MQTT được cấp quyền trên Broker).*
    * Firmware và Backend tự động chuẩn hóa dấu nháy và cập nhật trạng thái đồng bộ lên cơ sở dữ liệu và màn hình điều khiển.
+5. **Giả lập nhanh dữ liệu cảnh báo từ dòng lệnh (Alert Testing):**
+   * Khi chưa cắm phần cứng hoặc muốn kiểm thử trực tiếp trạng thái nháy LED và đổi màu ô giá trị trên Web:
+     ```cmd
+     mosquitto_pub -h localhost -p 8000 -u <mqtt_user> -P <mqtt_password> -t "data/random" -m "{\"s1\":6,\"s2\":90,\"s3\":300}"
+     ```
+   * *Kỳ vọng:* Cảm biến 1 ($6 > 5$) và Cảm biến 2 ($90 > 50$) vượt ngưỡng 50% max ➔ LED cảnh báo 1 (D7) và LED cảnh báo 2 (D0) cùng các box tương ứng trên Web NHÁY đỏ; Cảm biến 3 ($300 \le 500$) ➔ LED cảnh báo 3 (D8) và box LED 3 TẮT / bình thường.
 
 ---
 

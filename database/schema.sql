@@ -111,8 +111,11 @@ INSERT INTO devices (device_code, device_name, device_type, status) VALUES
   ('led1', 'Đèn 1', 'LED', 'off'),
   ('led2', 'Đèn 2', 'LED', 'off');
 
--- 3. Cảm biến (1: Nhiệt độ, 2: Độ ẩm, 3: Ánh sáng)
+-- 3. Cảm biến (1: Nhiệt độ, 2: Độ ẩm, 3: Ánh sáng, 4-6: Cảm biến ngẫu nhiên)
 INSERT INTO sensors (sensor_code, sensor_name, sensor_type, unit) VALUES
   ('dht11_temp', 'Cảm biến Nhiệt độ DHT11', 'temperature', '°C'),
   ('dht11_hum',  'Cảm biến Độ ẩm DHT11',    'humidity',    '%'),
-  ('ldr_light',  'Quang trở LDR',           'light',       'lux');
+  ('ldr_light',  'Quang trở LDR',           'light',       'lux'),
+  ('RND1',       'Cảm biến Ngẫu nhiên 1',   'random',      'đv'),
+  ('RND2',       'Cảm biến Ngẫu nhiên 2',   'random',      '%'),
+  ('RND3',       'Cảm biến Ngẫu nhiên 3',   'random',      'pts');
