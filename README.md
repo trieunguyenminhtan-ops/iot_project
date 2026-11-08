@@ -183,6 +183,10 @@ Các script migration được lưu trữ tại thư mục `database/migrations/
    ```sql
    mysql -u iot -p iot_project < database/migrations/002_add_alert_threshold.sql
    ```
+3. **Migration 003** (Chuẩn hóa tên hiển thị tiếng Việt và loại cảm biến):
+   ```sql
+   mysql -u iot -p iot_project < database/migrations/003_fix_sensor_display_names.sql
+   ```
 
 ---
 

@@ -117,6 +117,6 @@ INSERT INTO sensors (sensor_code, sensor_name, sensor_type, unit, alert_threshol
   ('dht11_temp', 'Cảm biến Nhiệt độ DHT11', 'temperature', '°C',  NULL),
   ('dht11_hum',  'Cảm biến Độ ẩm DHT11',    'humidity',    '%',   NULL),
   ('ldr_light',  'Quang trở LDR',           'light',       'lux', NULL),
-  ('RND1',       'Cảm biến Ngẫu nhiên 1',   'random',      'đv',  5),
-  ('RND2',       'Cảm biến Ngẫu nhiên 2',   'random',      '%',   50),
-  ('RND3',       'Cảm biến Ngẫu nhiên 3',   'random',      'pts', 500);
+  ('RND1',       'Cảm biến 1',   'random',      'đv',  5),
+  ('RND2',       'Cảm biến 2',   'random',      '%',   50),
+  ('RND3',       'Cảm biến 3',   'random',      'pts', 500);

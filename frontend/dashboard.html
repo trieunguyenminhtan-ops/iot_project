@@ -37,30 +37,39 @@
 
         /* Hiệu ứng nháy LED cảnh báo và Box LED (chu kỳ ~300ms khớp phần cứng) */
         @keyframes led-blink-red {
-            0%, 100% {
+
+            0%,
+            100% {
                 background-color: #ef4444;
                 box-shadow: 0 0 16px #ef4444, inset 0 0 6px #fca5a5;
             }
+
             50% {
                 background-color: #450a0a;
                 box-shadow: 0 0 2px #450a0a;
             }
         }
+
         @keyframes box-glow-red {
-            0%, 100% {
+
+            0%,
+            100% {
                 border-color: #ef4444;
                 background-color: rgba(239, 68, 68, 0.18);
                 box-shadow: 0 0 25px rgba(239, 68, 68, 0.45);
             }
+
             50% {
                 border-color: #991b1b;
                 background-color: rgba(153, 27, 27, 0.05);
                 box-shadow: 0 0 6px rgba(239, 68, 68, 0.15);
             }
         }
+
         .led-blinking {
             animation: led-blink-red 0.3s infinite ease-in-out !important;
         }
+
         .box-blinking {
             animation: box-glow-red 0.3s infinite ease-in-out !important;
         }
@@ -146,7 +155,7 @@
                     <i class="fas fa-history text-xl mb-1"></i>
                     <span class="text-xs text-center">Action history</span>
                 </button>
-                
+
                 <button onclick="switchTab('warning')" id="btn-warning"
                     class="menu-btn border-l-4 border-transparent py-4 px-2 flex flex-col items-center hover:bg-slate-700 text-slate-300 transition">
                     <i class="fas fa-exclamation-triangle text-xl mb-1 text-amber-400"></i>
@@ -294,12 +303,12 @@
                     <select id="ds-type"
                         class="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-500">
                         <option value="">Tất cả</option>
-                        <option value="temperature">Nhiệt độ (°C)</option>
-                        <option value="humidity">Độ ẩm (%)</option>
-                        <option value="light">Ánh sáng (lux)</option>
-                        <option value="RND1">Cảm biến Ngẫu nhiên 1 (đv)</option>
-                        <option value="RND2">Cảm biến Ngẫu nhiên 2 (%)</option>
-                        <option value="RND3">Cảm biến Ngẫu nhiên 3 (pts)</option>
+                        <option value="temperature">Nhiệt độ</option>
+                        <option value="humidity">Độ ẩm</option>
+                        <option value="light">Ánh sáng</option>
+                        <option value="RND1">Cảm biến 1</option>
+                        <option value="RND2">Cảm biến 2</option>
+                        <option value="RND3">Cảm biến 3</option>
                         <option value="time">Thời gian</option>
                     </select>
                 </div>
@@ -509,18 +518,21 @@
             </div>
         </div>
 
-                <!-- ================= MÀN HÌNH: CẢNH BÁO (LƯỚI 3x3 KÉO DÀI HẾT MÀN HÌNH) ================= -->
+        <!-- ================= MÀN HÌNH: CẢNH BÁO (LƯỚI 3x3 KÉO DÀI HẾT MÀN HÌNH) ================= -->
         <div id="tab-warning" class="tab-content flex-col h-full w-full gap-4 overflow-y-auto custom-scroll pr-1">
             <!-- Header của tab Cảnh báo -->
-            <div class="flex items-center justify-between bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-100 shrink-0">
+            <div
+                class="flex items-center justify-between bg-white px-5 py-3 rounded-xl shadow-sm border border-slate-100 shrink-0">
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fas fa-exclamation-triangle text-amber-500"></i> Giám sát Cảnh báo Cảm biến Ngẫu nhiên
+                        <i class="fas fa-exclamation-triangle text-amber-500"></i> Giám sát cảnh báo cảm biến
                     </h2>
-                    <p class="text-xs text-slate-500">Hệ thống giám sát thời gian thực với tính năng tùy chỉnh ngưỡng cảnh báo linh hoạt</p>
+                    <p class="text-xs text-slate-500">Hệ thống giám sát thời gian thực với tính năng tùy chỉnh ngưỡng
+                        cảnh báo linh hoạt</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span id="warning-sync-status" class="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700 flex items-center gap-1.5">
+                    <span id="warning-sync-status"
+                        class="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Thời gian thực
                     </span>
                 </div>
@@ -529,7 +541,8 @@
             <!-- HÀNG 1: 3 Ô HIỂN THỊ GIÁ TRỊ HIỆN TẠI (LƯỚI 3 CỘT) -->
             <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
                 <!-- Cột 1: Cảm biến 1 -->
-                <div id="warn-card-1" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
+                <div id="warn-card-1"
+                    class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
                     <div>
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 1 (0 - 10)</p>
                         <div class="flex items-baseline gap-1 mt-1">
@@ -543,9 +556,11 @@
                 </div>
 
                 <!-- Cột 2: Cảm biến 2 -->
-                <div id="warn-card-2" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
+                <div id="warn-card-2"
+                    class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
                     <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 2 (0 - 100)</p>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 2 (0 - 100)
+                        </p>
                         <div class="flex items-baseline gap-1 mt-1">
                             <span id="warn-val-2" class="text-3xl font-black text-slate-800">--</span>
                             <span class="text-sm font-semibold text-slate-400">/ 100 %</span>
@@ -557,9 +572,11 @@
                 </div>
 
                 <!-- Cột 3: Cảm biến 3 -->
-                <div id="warn-card-3" class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
+                <div id="warn-card-3"
+                    class="p-4 rounded-xl border-2 transition-all flex items-center justify-between bg-white border-slate-200 shadow-sm">
                     <div>
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 3 (0 - 1000)</p>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cảm biến 3 (0 - 1000)
+                        </p>
                         <div class="flex items-baseline gap-1 mt-1">
                             <span id="warn-val-3" class="text-3xl font-black text-slate-800">--</span>
                             <span class="text-sm font-semibold text-slate-400">/ 1000 pts</span>
@@ -573,11 +590,13 @@
 
             <!-- HÀNG NGƯỠNG CẢNH BÁO: 3 Ô INPUT THẲNG CỘT VỚI 3 CẢM BIẾN + NÚT LƯU CHUNG -->
             <div class="w-full bg-white p-4 rounded-xl shadow-sm border border-slate-200 shrink-0">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-3 mb-3 border-b border-slate-100 pb-3">
+                <div
+                    class="flex flex-col md:flex-row items-center justify-between gap-3 mb-3 border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-sliders-h text-blue-600"></i>
                         <h3 class="font-bold text-sm text-slate-800">Cấu hình Ngưỡng Cảnh báo</h3>
-                        <span class="text-xs text-slate-400">(Số nguyên, giá trị > ngưỡng sẽ kích hoạt nháy LED thật & nháy box Web)</span>
+                        <span class="text-xs text-slate-400">(Số nguyên, giá trị > ngưỡng sẽ kích hoạt nháy LED thật &
+                            nháy box Web)</span>
                     </div>
                     <div class="flex items-center gap-3 w-full md:w-auto justify-end">
                         <span id="thresh-msg" class="text-xs font-semibold hidden"></span>
@@ -592,12 +611,12 @@
                     <!-- Ô nhập ngưỡng 1 -->
                     <div class="flex flex-col">
                         <div class="flex items-center justify-between mb-1">
-                            <label for="thresh-input-1" class="text-xs font-bold text-slate-700">Ngưỡng CB1 (0 – 10):</label>
+                            <label for="thresh-input-1" class="text-xs font-bold text-slate-700">Ngưỡng CB1 (0 –
+                                10):</label>
                             <span class="text-[11px] text-slate-400">Mặc định: 5 đv</span>
                         </div>
                         <div class="relative">
-                            <input type="number" id="thresh-input-1" min="0" max="10" step="1"
-                                placeholder="0 – 10"
+                            <input type="number" id="thresh-input-1" min="0" max="10" step="1" placeholder="0 – 10"
                                 onfocus="handleThreshFocus(1)" oninput="handleThreshInput(1)"
                                 class="w-full px-3 py-2 text-sm font-bold border rounded-lg border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-12 bg-white" />
                             <span class="absolute right-3 top-2 text-xs font-semibold text-slate-400">đv</span>
@@ -608,12 +627,12 @@
                     <!-- Ô nhập ngưỡng 2 -->
                     <div class="flex flex-col">
                         <div class="flex items-center justify-between mb-1">
-                            <label for="thresh-input-2" class="text-xs font-bold text-slate-700">Ngưỡng CB2 (0 – 100):</label>
+                            <label for="thresh-input-2" class="text-xs font-bold text-slate-700">Ngưỡng CB2 (0 –
+                                100):</label>
                             <span class="text-[11px] text-slate-400">Mặc định: 50 %</span>
                         </div>
                         <div class="relative">
-                            <input type="number" id="thresh-input-2" min="0" max="100" step="1"
-                                placeholder="0 – 100"
+                            <input type="number" id="thresh-input-2" min="0" max="100" step="1" placeholder="0 – 100"
                                 onfocus="handleThreshFocus(2)" oninput="handleThreshInput(2)"
                                 class="w-full px-3 py-2 text-sm font-bold border rounded-lg border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-12 bg-white" />
                             <span class="absolute right-3 top-2 text-xs font-semibold text-slate-400">%</span>
@@ -624,12 +643,12 @@
                     <!-- Ô nhập ngưỡng 3 -->
                     <div class="flex flex-col">
                         <div class="flex items-center justify-between mb-1">
-                            <label for="thresh-input-3" class="text-xs font-bold text-slate-700">Ngưỡng CB3 (0 – 1000):</label>
+                            <label for="thresh-input-3" class="text-xs font-bold text-slate-700">Ngưỡng CB3 (0 –
+                                1000):</label>
                             <span class="text-[11px] text-slate-400">Mặc định: 500 pts</span>
                         </div>
                         <div class="relative">
-                            <input type="number" id="thresh-input-3" min="0" max="1000" step="1"
-                                placeholder="0 – 1000"
+                            <input type="number" id="thresh-input-3" min="0" max="1000" step="1" placeholder="0 – 1000"
                                 onfocus="handleThreshFocus(3)" oninput="handleThreshInput(3)"
                                 class="w-full px-3 py-2 text-sm font-bold border rounded-lg border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-12 bg-white" />
                             <span class="absolute right-3 top-2 text-xs font-semibold text-slate-400">pts</span>
@@ -678,38 +697,50 @@
             <!-- HÀNG 3: 3 BOX LED CẢNH BÁO KÉO DÀI HẾT CHIỀU NGANG MÀN HÌNH -->
             <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 pb-2">
                 <!-- Box LED 1 -->
-                <div id="warn-led-box-1" class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
+                <div id="warn-led-box-1"
+                    class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
                     <div class="flex items-center gap-3 mb-2">
-                        <div id="warn-led-bulb-1" class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0"></div>
+                        <div id="warn-led-bulb-1"
+                            class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0">
+                        </div>
                         <h4 class="text-base font-bold text-white tracking-wide">LED 1 (cảnh báo)</h4>
                     </div>
                     <p id="warn-led-state-1" class="text-xs text-slate-400 font-mono mb-1">Trạng thái: TẮT</p>
                     <p class="text-[11px] text-slate-400 font-sans">
-                        Hiện tại: <span id="warn-led-cur-1" class="font-bold text-white">--</span> | Ngưỡng: <span id="warn-led-thresh-1" class="font-bold text-amber-400">5</span>
+                        Hiện tại: <span id="warn-led-cur-1" class="font-bold text-white">--</span> | Ngưỡng: <span
+                            id="warn-led-thresh-1" class="font-bold text-amber-400">5</span>
                     </p>
                 </div>
 
                 <!-- Box LED 2 -->
-                <div id="warn-led-box-2" class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
+                <div id="warn-led-box-2"
+                    class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
                     <div class="flex items-center gap-3 mb-2">
-                        <div id="warn-led-bulb-2" class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0"></div>
+                        <div id="warn-led-bulb-2"
+                            class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0">
+                        </div>
                         <h4 class="text-base font-bold text-white tracking-wide">LED 2 (cảnh báo)</h4>
                     </div>
                     <p id="warn-led-state-2" class="text-xs text-slate-400 font-mono mb-1">Trạng thái: TẮT</p>
                     <p class="text-[11px] text-slate-400 font-sans">
-                        Hiện tại: <span id="warn-led-cur-2" class="font-bold text-white">--</span> | Ngưỡng: <span id="warn-led-thresh-2" class="font-bold text-amber-400">50</span>
+                        Hiện tại: <span id="warn-led-cur-2" class="font-bold text-white">--</span> | Ngưỡng: <span
+                            id="warn-led-thresh-2" class="font-bold text-amber-400">50</span>
                     </p>
                 </div>
 
                 <!-- Box LED 3 -->
-                <div id="warn-led-box-3" class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
+                <div id="warn-led-box-3"
+                    class="warn-led-box flex flex-col items-center justify-center p-5 rounded-xl border-2 transition-all bg-slate-800 text-slate-300 border-slate-700 min-h-[140px] shadow-sm">
                     <div class="flex items-center gap-3 mb-2">
-                        <div id="warn-led-bulb-3" class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0"></div>
+                        <div id="warn-led-bulb-3"
+                            class="w-6 h-6 rounded-full bg-slate-600 border border-slate-400 transition-all shrink-0">
+                        </div>
                         <h4 class="text-base font-bold text-white tracking-wide">LED 3 (cảnh báo)</h4>
                     </div>
                     <p id="warn-led-state-3" class="text-xs text-slate-400 font-mono mb-1">Trạng thái: TẮT</p>
                     <p class="text-[11px] text-slate-400 font-sans">
-                        Hiện tại: <span id="warn-led-cur-3" class="font-bold text-white">--</span> | Ngưỡng: <span id="warn-led-thresh-3" class="font-bold text-amber-400">500</span>
+                        Hiện tại: <span id="warn-led-cur-3" class="font-bold text-white">--</span> | Ngưỡng: <span
+                            id="warn-led-thresh-3" class="font-bold text-amber-400">500</span>
                     </p>
                 </div>
             </div>
@@ -1792,9 +1823,32 @@
         // ---------------------------------------------------------------
         const dsState = { page: 1, search: '', type: '', pageSize: DEFAULT_PAGE_SIZE };
 
+        function formatSensorDisplay(r) {
+            let name = r.sensor_name || '';
+            let typeLabel = r.sensor_type_label || r.sensor_type || '';
+
+            const code = (r.sensor_code || '').toUpperCase();
+            if (code === 'RND1') {
+                name = 'Cảm biến 1';
+                typeLabel = 'Cảm biến 1';
+            } else if (code === 'RND2') {
+                name = 'Cảm biến 2';
+                typeLabel = 'Cảm biến 2';
+            } else if (code === 'RND3') {
+                name = 'Cảm biến 3';
+                typeLabel = 'Cảm biến 3';
+            } else {
+                if (typeLabel.includes('Ngẫu nhiên 1')) typeLabel = 'Cảm biến 1';
+                if (typeLabel.includes('Ngẫu nhiên 2')) typeLabel = 'Cảm biến 2';
+                if (typeLabel.includes('Ngẫu nhiên 3')) typeLabel = 'Cảm biến 3';
+                name = name.replace(/C\?m bi\?n Ng\?u nhi.n/g, 'Cảm biến').replace(/C\?m bi\?n/g, 'Cảm biến');
+            }
+            return { name, typeLabel };
+        }
+
         function filterAndPaginateSensors(page, pageSize, search, type) {
             let filtered = mockSensors.slice();
-            if (type === 'temperature' || type === 'humidity' || type === 'light') {
+            if (type && type !== 'time') {
                 filtered = filtered.filter(r => r.sensor_type === type || r.sensor_code === type);
             }
             if (search) {
@@ -1802,14 +1856,18 @@
                 if (type === 'time') {
                     filtered = filtered.filter(r => fmtDateTime(r.recorded_at).toLowerCase().includes(s));
                 } else {
-                    filtered = filtered.filter(r =>
-                        String(r.data_id).includes(s) ||
-                        (r.sensor_name || '').toLowerCase().includes(s) ||
-                        ((r.sensor_type_label || '') + ' ' + (r.sensor_type || '')).toLowerCase().includes(s) ||
-                        String(r.value).includes(s) ||
-                        (r.unit || '').toLowerCase().includes(s) ||
-                        fmtDateTime(r.recorded_at).toLowerCase().includes(s)
-                    );
+                    filtered = filtered.filter(r => {
+                        const disp = formatSensorDisplay(r);
+                        return (
+                            String(r.data_id).includes(s) ||
+                            disp.name.toLowerCase().includes(s) ||
+                            (r.sensor_name || '').toLowerCase().includes(s) ||
+                            disp.typeLabel.toLowerCase().includes(s) ||
+                            String(r.value).includes(s) ||
+                            (r.unit || '').toLowerCase().includes(s) ||
+                            fmtDateTime(r.recorded_at).toLowerCase().includes(s)
+                        );
+                    });
                 }
             }
             const total = filtered.length;
@@ -1820,18 +1878,21 @@
 
         function renderSensorsUI(d) {
             const tbody = document.getElementById('ds-tbody');
-            if (!d.rows || d.rows.length === 0) {
+            if (!d.rows.length) {
                 tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">Không tìm thấy bản ghi nào</td></tr>`;
             } else {
-                tbody.innerHTML = d.rows.map(r => `
+                tbody.innerHTML = d.rows.map(r => {
+                    const disp = formatSensorDisplay(r);
+                    return `
                     <tr class="hover:bg-gray-50">
                         <td class="p-3 border-b">${r.data_id}</td>
-                        <td class="p-3 border-b font-medium">${r.sensor_name}</td>
-                        <td class="p-3 border-b">${r.sensor_type_label || r.sensor_type || ''}</td>
+                        <td class="p-3 border-b font-medium">${disp.name}</td>
+                        <td class="p-3 border-b font-medium text-slate-700">${disp.typeLabel}</td>
                         <td class="p-3 border-b font-semibold text-blue-600">${parseFloat(r.value)}</td>
                         <td class="p-3 border-b">${r.unit || ''}</td>
                         <td class="p-3 border-b text-gray-500">${fmtDateTime(r.recorded_at)}</td>
-                    </tr>`).join('');
+                    </tr>`;
+                }).join('');
             }
             document.getElementById('ds-total').textContent = d.total;
             document.getElementById('ds-page').textContent = d.page;
@@ -2150,7 +2211,7 @@
             showToast(urlParams.get('toast'), 'warning');
         }
 
-        
+
         // ================================================================
         // TẢI DANH MỤC CẢM BIẾN ĐỘNG CHO BỘ LỌC DATA SENSOR
         // ================================================================
@@ -2164,9 +2225,32 @@
                     const curVal = select.value;
                     let html = '<option value="">Tất cả</option>';
                     res.sensors.forEach(s => {
-                        const val = (s.sensor_code && s.sensor_code.startsWith('RND')) ? s.sensor_code : s.sensor_type;
-                        const unitStr = s.unit ? (' (' + s.unit + ')') : '';
-                        html += '<option value="' + val + '">' + s.sensor_name + unitStr + '</option>';
+                        const code = (s.sensor_code || '').toUpperCase();
+                        const type = (s.sensor_type || '').toLowerCase();
+                        let val = type;
+                        let label = s.sensor_name;
+
+                        if (code === 'DHT11_TEMP' || type === 'temperature') {
+                            val = 'temperature';
+                            label = 'Nhiệt độ';
+                        } else if (code === 'DHT11_HUM' || type === 'humidity') {
+                            val = 'humidity';
+                            label = 'Độ ẩm';
+                        } else if (code === 'LDR_LIGHT' || type === 'light') {
+                            val = 'light';
+                            label = 'Ánh sáng';
+                        } else if (code === 'RND1') {
+                            val = 'RND1';
+                            label = 'Cảm biến 1';
+                        } else if (code === 'RND2') {
+                            val = 'RND2';
+                            label = 'Cảm biến 2';
+                        } else if (code === 'RND3') {
+                            val = 'RND3';
+                            label = 'Cảm biến 3';
+                        }
+
+                        html += '<option value="' + val + '">' + label + '</option>';
                     });
                     html += '<option value="time">Thời gian</option>';
                     select.innerHTML = html;

@@ -141,6 +141,10 @@ Dự án hoàn toàn tương thích và hoạt động mượt mà trên **Antig
      ```bat
      mysql -u iot -p iot_project < C:/iot-project/database/migrations/002_add_alert_threshold.sql
      ```
+   - **Chuẩn hóa tên và loại cảm biến tiếng Việt (Migration 003):**
+     ```bat
+     mysql -u iot -p iot_project < C:/iot-project/database/migrations/003_fix_sensor_display_names.sql
+     ```
    > ⚠️ Chạy lần thứ 2 `schema.sql` sẽ báo lỗi `already exists`. Muốn nạp lại từ đầu (**xóa hết dữ liệu**), chạy trước:
    > `mysql -u root -p -e "DROP DATABASE IF EXISTS iot_project;"`
    > Các file migration `001_add_random_sensors.sql` và `002_add_alert_threshold.sql` là idempotent (chạy nhiều lần an toàn, không sinh lỗi, không trùng lặp bản ghi).
