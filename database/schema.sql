@@ -52,12 +52,13 @@ CREATE TABLE devices (
 -- 3. Bảng: sensors (Danh mục cảm biến)
 -- ------------------------------------------------------------
 CREATE TABLE sensors (
-  sensor_id    BIGINT(20)   NOT NULL AUTO_INCREMENT,
-  sensor_code  VARCHAR(50)  NULL,
-  sensor_name  VARCHAR(100) NOT NULL,
-  sensor_type  VARCHAR(30)  NOT NULL,
-  unit         VARCHAR(20)  NULL,
-  created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sensor_id        BIGINT(20)   NOT NULL AUTO_INCREMENT,
+  sensor_code      VARCHAR(50)  NULL,
+  sensor_name      VARCHAR(100) NOT NULL,
+  sensor_type      VARCHAR(30)  NOT NULL,
+  unit             VARCHAR(20)  NULL,
+  alert_threshold  INT(11)      NULL DEFAULT NULL,
+  created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (sensor_id),
   UNIQUE KEY uq_sensors_code (sensor_code)
 ) ENGINE=InnoDB;
@@ -111,11 +112,11 @@ INSERT INTO devices (device_code, device_name, device_type, status) VALUES
   ('led1', 'Đèn 1', 'LED', 'off'),
   ('led2', 'Đèn 2', 'LED', 'off');
 
--- 3. Cảm biến (1: Nhiệt độ, 2: Độ ẩm, 3: Ánh sáng, 4-6: Cảm biến ngẫu nhiên)
-INSERT INTO sensors (sensor_code, sensor_name, sensor_type, unit) VALUES
-  ('dht11_temp', 'Cảm biến Nhiệt độ DHT11', 'temperature', '°C'),
-  ('dht11_hum',  'Cảm biến Độ ẩm DHT11',    'humidity',    '%'),
-  ('ldr_light',  'Quang trở LDR',           'light',       'lux'),
-  ('RND1',       'Cảm biến Ngẫu nhiên 1',   'random',      'đv'),
-  ('RND2',       'Cảm biến Ngẫu nhiên 2',   'random',      '%'),
-  ('RND3',       'Cảm biến Ngẫu nhiên 3',   'random',      'pts');
+-- 3. Cảm biến (1: Nhiệt độ, 2: Độ ẩm, 3: Ánh sáng, 4-6: Cảm biến ngẫu nhiên với ngưỡng mặc định 5/50/500)
+INSERT INTO sensors (sensor_code, sensor_name, sensor_type, unit, alert_threshold) VALUES
+  ('dht11_temp', 'Cảm biến Nhiệt độ DHT11', 'temperature', '°C',  NULL),
+  ('dht11_hum',  'Cảm biến Độ ẩm DHT11',    'humidity',    '%',   NULL),
+  ('ldr_light',  'Quang trở LDR',           'light',       'lux', NULL),
+  ('RND1',       'Cảm biến Ngẫu nhiên 1',   'random',      'đv',  5),
+  ('RND2',       'Cảm biến Ngẫu nhiên 2',   'random',      '%',   50),
+  ('RND3',       'Cảm biến Ngẫu nhiên 3',   'random',      'pts', 500);

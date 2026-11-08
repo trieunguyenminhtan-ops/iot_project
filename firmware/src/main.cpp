@@ -15,12 +15,14 @@ const char* topic_data = "data/sensor";
 // Topic dữ liệu cảm biến ngẫu nhiên
 const char* topic_random = "data/random";
 
-// Topic 2: điều khiển
+// Topic 2: điều khiển & cấu hình
 // - Mỗi LED có 1 subtopic riêng để điều khiển RIÊNG LẺ từng đèn
 const char* topic_control_led1 = "device/control/led1"; // gửi ON/OFF chỉ cho LED 1
 const char* topic_control_led2 = "device/control/led2"; // gửi ON/OFF chỉ cho LED 2
 // - Thêm 1 subtopic để điều khiển NHIỀU đèn CÙNG LÚC bằng 1 lệnh duy nhất (payload JSON)
 const char* topic_control_all  = "device/control/all";  // vd: {"led1":"ON","led2":"OFF"}
+// - Topic nhận cấu hình ngưỡng cảnh báo từ Node-RED (QoS 1, retained)
+const char* topic_config_threshold = "device/config/threshold";
 
 // Topic 3: phản hồi — dùng CHUNG cho mọi thiết bị.
 // Payload chuẩn hóa dạng JSON: {"id":<int>,"device":"<ten>","state":"ON"/"OFF","status":"success"/"false"}
@@ -57,6 +59,14 @@ bool alert3 = false;
 unsigned long lastBlinkTime = 0;
 const unsigned long BLINK_INTERVAL = 150; // Chu kỳ nháy ~300ms (150ms bật, 150ms tắt)
 bool blinkState = false;
+
+// Ngưỡng cảnh báo cho 3 cảm biến ngẫu nhiên (mặc định 5, 50, 500)
+int thresh1 = 5;
+int thresh2 = 50;
+int thresh3 = 500;
+int last_s1 = 0;
+int last_s2 = 0;
+int last_s3 = 0;
 
 void setup_wifi() {
   delay(10);
@@ -137,6 +147,35 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (doc.containsKey("led2")) {
       applyLedCommand(DEVICE_ID_LED2, LED2_PIN, "led2", String((const char*)doc["led2"]));
     }
+  } else if (t == topic_config_threshold) {
+    // Nhận cấu hình ngưỡng cảnh báo mới từ Node-RED
+    StaticJsonDocument<128> doc;
+    DeserializationError err = deserializeJson(doc, msg);
+    if (err) {
+      Serial.println("Loi parse JSON nguong: " + String(err.c_str()));
+      return;
+    }
+    bool updated = false;
+    if (doc.containsKey("t1")) {
+      int v1 = doc["t1"];
+      if (v1 >= 0 && v1 <= 10) { thresh1 = v1; updated = true; }
+    }
+    if (doc.containsKey("t2")) {
+      int v2 = doc["t2"];
+      if (v2 >= 0 && v2 <= 100) { thresh2 = v2; updated = true; }
+    }
+    if (doc.containsKey("t3")) {
+      int v3 = doc["t3"];
+      if (v3 >= 0 && v3 <= 1000) { thresh3 = v3; updated = true; }
+    }
+    if (updated) {
+      // Đánh giá lại ngay trạng thái cảnh báo với giá trị random gần nhất
+      alert1 = (last_s1 > thresh1);
+      alert2 = (last_s2 > thresh2);
+      alert3 = (last_s3 > thresh3);
+      Serial.printf("Cap nhat nguong moi: t1=%d, t2=%d, t3=%d | Alert: [%d, %d, %d]\n",
+                    thresh1, thresh2, thresh3, alert1, alert2, alert3);
+    }
   }
 }
 
@@ -153,6 +192,7 @@ void reconnect() {
       client.subscribe(topic_control_led1);
       client.subscribe(topic_control_led2);
       client.subscribe(topic_control_all);
+      client.subscribe(topic_config_threshold, 1); // Đăng ký nhận cấu hình ngưỡng cảnh báo
     } else {
       Serial.print("that bai, rc=");
       Serial.print(client.state());
@@ -229,10 +269,14 @@ void loop() {
     int s2 = random(0, 101);   // 0..100
     int s3 = random(0, 1001);  // 0..1000
 
-    // Cập nhật trạng thái cảnh báo (> 50% max)
-    alert1 = (s1 > 5);
-    alert2 = (s2 > 50);
-    alert3 = (s3 > 500);
+    last_s1 = s1;
+    last_s2 = s2;
+    last_s3 = s3;
+
+    // Cập nhật trạng thái cảnh báo so với ngưỡng hiện hành (giá trị > ngưỡng)
+    alert1 = (s1 > thresh1);
+    alert2 = (s2 > thresh2);
+    alert3 = (s3 > thresh3);
 
     String payloadRandom = "{\"s1\":" + String(s1) +
                            ",\"s2\":" + String(s2) +

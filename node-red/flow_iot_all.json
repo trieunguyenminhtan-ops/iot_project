@@ -424,7 +424,7 @@
     "type": "function",
     "z": "flow_dashboard_api",
     "name": "Build query du lieu + phan trang",
-    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập dữ liệu cảm biến (chỉ admin và user)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Nhan hien thi cua loai cam bien (tieng Viet)\nvar TYPE_LABEL = \"CASE s.sensor_type WHEN 'temperature' THEN 'Nhiệt độ' WHEN 'humidity' THEN 'Độ ẩm' WHEN 'light' THEN 'Ánh sáng' WHEN 'random' THEN 'Ngẫu nhiên' ELSE s.sensor_type END\";\n\nvar q = msg.req.query || {};\nvar search = (q.search || \"\").trim();\nvar field = (q.field || \"all\").trim();   // all | id | name | type | value | unit | time\nvar rawType = (q.type || q.sensor || \"\").trim();\nvar page = Math.max(parseInt(q.page) || 1, 1);\nvar pageSize = Math.min(Math.max(parseInt(q.pageSize || q.limit) || 10, 1), 100);   // ho tro ca pageSize va limit\nvar offset = (page - 1) * pageSize;\n\nvar where = [];\nvar params = [];\nif (rawType) {\n    var normType = rawType;\n    if (rawType === \"dht11_temp\") normType = \"temperature\";\n    else if (rawType === \"dht11_hum\") normType = \"humidity\";\n    else if (rawType === \"ldr_light\") normType = \"light\";\n    else if (rawType === \"random\" || rawType === \"rnd\") normType = \"random\";\n    else if (rawType === \"RND1\" || rawType === \"RND2\" || rawType === \"RND3\") normType = \"random\";\n    where.push(\"s.sensor_type = ?\");\n    params.push(normType);\n}\n\nif (search) {\n    var like = \"%\" + search.replace(/[\\\\%_]/g, \"\\\\$&\") + \"%\";   // escape % _ \\ de tim dung ky tu nguoi dung go\n    var cols = {\n        id:    [\"CAST(d.data_id AS CHAR) LIKE ?\", 1],\n        name:  [\"s.sensor_name LIKE ?\", 1],\n        type:  [\"(s.sensor_type LIKE ? OR \" + TYPE_LABEL + \" LIKE ?)\", 2],\n        value: [\"CAST(d.value AS CHAR) LIKE ?\", 1],\n        unit:  [\"s.unit LIKE ?\", 1],\n        time:  [\"DATE_FORMAT(d.recorded_at, '%Y-%m-%d %H:%i:%s') LIKE ?\", 1]\n    };\n    var keys = cols[field] ? [field] : Object.keys(cols);   // \"Tat ca\": khop o bat ky cot nao\n    var parts = keys.map(function (k) {\n        for (var i = 0; i < cols[k][1]; i++) params.push(like);\n        return cols[k][0];\n    });\n    where.push(parts.length > 1 ? \"(\" + parts.join(\" OR \") + \")\" : parts[0]);\n}\nvar whereSQL = where.length ? (\"WHERE \" + where.join(\" AND \")) : \"\";\n\nmsg._page = page; msg._pageSize = pageSize; msg._where = whereSQL; msg._params = params;\n\nmsg.topic = \"SELECT d.data_id, s.sensor_name, s.sensor_type, \" + TYPE_LABEL + \" AS sensor_type_label, s.unit, d.value, d.recorded_at \" +\n            \"FROM data_sensors d JOIN sensors s ON s.sensor_id = d.sensor_id \" + whereSQL +\n            \" ORDER BY d.recorded_at DESC, d.data_id DESC LIMIT ? OFFSET ?\";\nmsg.payload = params.concat([pageSize, offset]);\nreturn [msg, null];",
+    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập dữ liệu cảm biến (chỉ admin và user)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Nhan hien thi cua loai cam bien (tieng Viet)\nvar TYPE_LABEL = \"CASE \" +\n    \"WHEN s.sensor_type = 'temperature' THEN 'Nhiệt độ' \" +\n    \"WHEN s.sensor_type = 'humidity' THEN 'Độ ẩm' \" +\n    \"WHEN s.sensor_type = 'light' THEN 'Ánh sáng' \" +\n    \"WHEN s.sensor_code = 'RND1' OR s.sensor_type = 'random_1' THEN 'Ngẫu nhiên 1' \" +\n    \"WHEN s.sensor_code = 'RND2' OR s.sensor_type = 'random_2' THEN 'Ngẫu nhiên 2' \" +\n    \"WHEN s.sensor_code = 'RND3' OR s.sensor_type = 'random_3' THEN 'Ngẫu nhiên 3' \" +\n    \"WHEN s.sensor_type = 'random' THEN 'Ngẫu nhiên' \" +\n    \"ELSE s.sensor_type END\";\n\nvar q = msg.req.query || {};\nvar search = (q.search || \"\").trim();\nvar field = (q.field || \"all\").trim();   // all | id | name | type | value | unit | time\nvar rawType = (q.type || q.sensor || \"\").trim();\nvar page = Math.max(parseInt(q.page) || 1, 1);\nvar pageSize = Math.min(Math.max(parseInt(q.pageSize || q.limit) || 10, 1), 100);   // ho tro ca pageSize va limit\nvar offset = (page - 1) * pageSize;\n\nvar where = [];\nvar params = [];\nif (rawType) {\n    var normType = rawType;\n    if (rawType === \"dht11_temp\") normType = \"temperature\";\n    else if (rawType === \"dht11_hum\") normType = \"humidity\";\n    else if (rawType === \"ldr_light\") normType = \"light\";\n    else if (rawType === \"random_1\" || rawType === \"RND1\" || rawType === \"rnd1\") normType = \"RND1\";\n    else if (rawType === \"random_2\" || rawType === \"RND2\" || rawType === \"rnd2\") normType = \"RND2\";\n    else if (rawType === \"random_3\" || rawType === \"RND3\" || rawType === \"rnd3\") normType = \"RND3\";\n    else if (rawType === \"random\" || rawType === \"rnd\") normType = \"random\";\n\n    if (normType === \"RND1\" || normType === \"RND2\" || normType === \"RND3\") {\n        where.push(\"s.sensor_code = ?\");\n        params.push(normType);\n    } else if (normType === \"random\") {\n        where.push(\"(s.sensor_type = 'random' OR s.sensor_code IN ('RND1', 'RND2', 'RND3'))\");\n    } else {\n        where.push(\"s.sensor_type = ?\");\n        params.push(normType);\n    }\n}\n\nif (search) {\n    var like = \"%\" + search.replace(/[\\\\%_]/g, \"\\\\$&\") + \"%\";   // escape % _ \\ de tim dung ky tu nguoi dung go\n    var cols = {\n        id:    [\"CAST(d.data_id AS CHAR) LIKE ?\", 1],\n        name:  [\"s.sensor_name LIKE ?\", 1],\n        type:  [\"(s.sensor_type LIKE ? OR \" + TYPE_LABEL + \" LIKE ?)\", 2],\n        value: [\"CAST(d.value AS CHAR) LIKE ?\", 1],\n        unit:  [\"s.unit LIKE ?\", 1],\n        time:  [\"DATE_FORMAT(d.recorded_at, '%Y-%m-%d %H:%i:%s') LIKE ?\", 1]\n    };\n    var keys = cols[field] ? [field] : Object.keys(cols);   // \"Tat ca\": khop o bat ky cot nao\n    var parts = keys.map(function (k) {\n        for (var i = 0; i < cols[k][1]; i++) params.push(like);\n        return cols[k][0];\n    });\n    where.push(parts.length > 1 ? \"(\" + parts.join(\" OR \") + \")\" : parts[0]);\n}\nvar whereSQL = where.length ? (\"WHERE \" + where.join(\" AND \")) : \"\";\n\nmsg._page = page; msg._pageSize = pageSize; msg._where = whereSQL; msg._params = params;\n\nmsg.topic = \"SELECT d.data_id, s.sensor_code, s.sensor_name, s.sensor_type, \" + TYPE_LABEL + \" AS sensor_type_label, s.unit, d.value, d.recorded_at \" +\n            \"FROM data_sensors d JOIN sensors s ON s.sensor_id = d.sensor_id \" + whereSQL +\n            \" ORDER BY d.recorded_at DESC, d.data_id DESC LIMIT ? OFFSET ?\";\nmsg.payload = params.concat([pageSize, offset]);\nreturn [msg, null];",
     "outputs": 2,
     "noerr": 0,
     "x": 380,
@@ -1063,7 +1063,7 @@
     "type": "function",
     "z": "flow_dashboard_api",
     "name": "Kiem tra token & Tao query",
-    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập cảnh báo (chỉ admin và user)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Token hợp lệ -> query 90 bản ghi gần nhất của 3 cảm biến ngẫu nhiên\nmsg.topic = \"SELECT d.data_id, d.sensor_id, s.sensor_code, s.sensor_name, s.unit, d.value, d.recorded_at \" +\n            \"FROM data_sensors d \" +\n            \"JOIN sensors s ON s.sensor_id = d.sensor_id \" +\n            \"WHERE s.sensor_code IN ('RND1', 'RND2', 'RND3') \" +\n            \"ORDER BY d.recorded_at DESC, d.data_id DESC LIMIT 90\";\nreturn [msg, null];",
+    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập cảnh báo (chỉ admin và user)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Token hợp lệ -> query dữ liệu và alert_threshold của 3 cảm biến ngẫu nhiên\nmsg.topic = \"SELECT d.data_id, d.sensor_id, s.sensor_code, s.sensor_name, s.unit, s.alert_threshold, d.value, d.recorded_at \" +\n            \"FROM data_sensors d \" +\n            \"JOIN sensors s ON s.sensor_id = d.sensor_id \" +\n            \"WHERE s.sensor_code IN ('RND1', 'RND2', 'RND3') \" +\n            \"ORDER BY d.recorded_at DESC, d.data_id DESC LIMIT 90\";\nreturn [msg, null];",
     "outputs": 2,
     "noerr": 0,
     "initialize": "",
@@ -1099,7 +1099,7 @@
     "type": "function",
     "z": "flow_dashboard_api",
     "name": "Dinh dang ket qua canh bao (Alert & 20 History)",
-    "func": "var rows = msg.payload || [];\n\n// Hằng số cấu hình ngưỡng và dải đo của 3 cảm biến ngẫu nhiên\nvar SENSOR_CONFIG = {\n    \"RND1\": { name: \"Cảm biến Ngẫu nhiên 1\", unit: \"đv\", min: 0, max: 10, threshold: 5 },\n    \"RND2\": { name: \"Cảm biến Ngẫu nhiên 2\", unit: \"%\", min: 0, max: 100, threshold: 50 },\n    \"RND3\": { name: \"Cảm biến Ngẫu nhiên 3\", unit: \"pts\", min: 0, max: 1000, threshold: 500 }\n};\n\nvar codes = [\"RND1\", \"RND2\", \"RND3\"];\nvar sensorsResult = codes.map(function(code) {\n    var cfg = SENSOR_CONFIG[code];\n    // Lọc các bản ghi của cảm biến này\n    var sRows = rows.filter(function(r) { return r.sensor_code === code; });\n    var latest = sRows[0] || null;\n    var val = latest ? Number(latest.value) : 0;\n    var alertFlag = (val > cfg.threshold); // Cờ alert tính duy nhất tại backend theo hằng số cấu hình\n\n    // Tối đa 20 điểm đo gần nhất, sắp xếp theo thời gian tăng dần để vẽ line chart\n    var history = sRows.slice(0, 20).reverse().map(function(r) {\n        return {\n            t: r.recorded_at,\n            v: Number(r.value)\n        };\n    });\n\n    return {\n        code: code,\n        name: latest ? latest.sensor_name : cfg.name,\n        unit: latest ? latest.unit : cfg.unit,\n        min: cfg.min,\n        max: cfg.max,\n        threshold: cfg.threshold,\n        value: val,\n        recorded_at: latest ? latest.recorded_at : null,\n        alert: alertFlag,\n        history: history\n    };\n});\n\nmsg.payload = {\n    ok: true,\n    sensors: sensorsResult,\n    data: sensorsResult\n};\n\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\nreturn msg;",
+    "func": "var rows = msg.payload || [];\n\nvar SENSOR_CONFIG = {\n    \"RND1\": { name: \"Cảm biến Ngẫu nhiên 1 (0 - 10)\", unit: \"đv\", min: 0, max: 10, defaultThreshold: 5 },\n    \"RND2\": { name: \"Cảm biến Ngẫu nhiên 2 (0 - 100)\", unit: \"%\", min: 0, max: 100, defaultThreshold: 50 },\n    \"RND3\": { name: \"Cảm biến Ngẫu nhiên 3 (0 - 1000)\", unit: \"pts\", min: 0, max: 1000, defaultThreshold: 500 }\n};\n\nvar globalThresh = global.get(\"thresholds\") || {};\n\nvar codes = [\"RND1\", \"RND2\", \"RND3\"];\nvar sensorsResult = codes.map(function(code) {\n    var cfg = SENSOR_CONFIG[code];\n    var sRows = rows.filter(function(r) { return r.sensor_code === code; });\n    var latest = sRows[0] || null;\n    var val = latest ? Number(latest.value) : 0;\n\n    var thresh = (latest && latest.alert_threshold !== null && latest.alert_threshold !== undefined)\n                 ? Number(latest.alert_threshold)\n                 : (globalThresh[code] !== undefined ? Number(globalThresh[code]) : cfg.defaultThreshold);\n\n    var alertFlag = (val > thresh);\n\n    var history = sRows.slice(0, 20).reverse().map(function(r) {\n        return {\n            t: r.recorded_at,\n            v: Number(r.value)\n        };\n    });\n\n    return {\n        code: code,\n        name: latest ? latest.sensor_name : cfg.name,\n        unit: latest ? latest.unit : cfg.unit,\n        min: cfg.min,\n        max: cfg.max,\n        threshold: thresh,\n        default_threshold: cfg.defaultThreshold,\n        defaultThreshold: cfg.defaultThreshold,\n        value: val,\n        recorded_at: latest ? latest.recorded_at : null,\n        alert: alertFlag,\n        history: history\n    };\n});\n\nmsg.payload = {\n    ok: true,\n    sensors: sensorsResult,\n    data: sensorsResult\n};\n\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -1122,6 +1122,354 @@
     "headers": {},
     "x": 1070,
     "y": 780,
+    "wires": []
+  },
+  {
+    "id": "m_threshold_pub",
+    "type": "mqtt out",
+    "z": "flow_dashboard_api",
+    "name": "PUB device/config/threshold (QoS 1, Retain)",
+    "topic": "device/config/threshold",
+    "qos": "1",
+    "retain": "true",
+    "broker": "mqtt_broker_cfg",
+    "x": 900,
+    "y": 820,
+    "wires": []
+  },
+  {
+    "id": "inject_startup_threshold",
+    "type": "inject",
+    "z": "flow_dashboard_api",
+    "name": "Startup / Deploy Sync",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 1.5,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 820,
+    "wires": [
+      [
+        "fn_startup_thresh_query"
+      ]
+    ]
+  },
+  {
+    "id": "fn_startup_thresh_query",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Query thresholds for startup",
+    "func": "msg.topic = \"SELECT sensor_code, alert_threshold FROM sensors WHERE sensor_code IN ('RND1','RND2','RND3');\";\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 380,
+    "y": 820,
+    "wires": [
+      [
+        "m_startup_thresh_select"
+      ]
+    ]
+  },
+  {
+    "id": "m_startup_thresh_select",
+    "type": "mysql",
+    "z": "flow_dashboard_api",
+    "mydb": "mysql_db_cfg",
+    "name": "SELECT alert_threshold FROM sensors",
+    "x": 580,
+    "y": 820,
+    "wires": [
+      [
+        "fn_startup_thresh_format"
+      ]
+    ]
+  },
+  {
+    "id": "fn_startup_thresh_format",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Format MQTT threshold payload",
+    "func": "var rows = msg.payload || [];\nvar defaults = { RND1: 5, RND2: 50, RND3: 500 };\nvar r1 = rows.find(function(x) { return x.sensor_code === 'RND1'; });\nvar r2 = rows.find(function(x) { return x.sensor_code === 'RND2'; });\nvar r3 = rows.find(function(x) { return x.sensor_code === 'RND3'; });\n\nvar t1 = (r1 && r1.alert_threshold !== null && r1.alert_threshold !== undefined) ? Number(r1.alert_threshold) : defaults.RND1;\nvar t2 = (r2 && r2.alert_threshold !== null && r2.alert_threshold !== undefined) ? Number(r2.alert_threshold) : defaults.RND2;\nvar t3 = (r3 && r3.alert_threshold !== null && r3.alert_threshold !== undefined) ? Number(r3.alert_threshold) : defaults.RND3;\n\nglobal.set(\"thresholds\", { RND1: t1, RND2: t2, RND3: t3 });\n\nmsg.payload = JSON.stringify({ t1: t1, t2: t2, t3: t3 });\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 740,
+    "y": 820,
+    "wires": [
+      [
+        "m_threshold_pub"
+      ]
+    ]
+  },
+  {
+    "id": "h_get_thresholds",
+    "type": "http in",
+    "z": "flow_dashboard_api",
+    "name": "GET /api/thresholds",
+    "url": "/api/thresholds",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 130,
+    "y": 880,
+    "wires": [
+      [
+        "fn_get_thresh_auth"
+      ]
+    ]
+  },
+  {
+    "id": "h_get_thresh_resp",
+    "type": "http response",
+    "z": "flow_dashboard_api",
+    "name": "Response GET /api/thresholds",
+    "statusCode": "",
+    "headers": {},
+    "x": 880,
+    "y": 880,
+    "wires": []
+  },
+  {
+    "id": "fn_get_thresh_auth",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Auth GET /api/thresholds",
+    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập ngưỡng cảnh báo (chỉ admin và user)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nmsg.topic = \"SELECT sensor_code, sensor_name, unit, alert_threshold, threshold_updated_at FROM sensors WHERE sensor_code IN ('RND1', 'RND2', 'RND3') ORDER BY sensor_id;\";\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 350,
+    "y": 880,
+    "wires": [
+      [
+        "m_get_thresh"
+      ],
+      [
+        "h_get_thresh_resp"
+      ]
+    ]
+  },
+  {
+    "id": "m_get_thresh",
+    "type": "mysql",
+    "z": "flow_dashboard_api",
+    "mydb": "mysql_db_cfg",
+    "name": "SELECT alert_threshold FROM sensors",
+    "x": 550,
+    "y": 880,
+    "wires": [
+      [
+        "fn_get_thresh_resp"
+      ]
+    ]
+  },
+  {
+    "id": "fn_get_thresh_resp",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Format response GET /api/thresholds",
+    "func": "var rows = msg.payload || [];\nvar limits = {\n    \"RND1\": { min: 0, max: 10, def: 5 },\n    \"RND2\": { min: 0, max: 100, def: 50 },\n    \"RND3\": { min: 0, max: 1000, def: 500 }\n};\n\nvar codes = [\"RND1\", \"RND2\", \"RND3\"];\nvar list = codes.map(function(c) {\n    var r = rows.find(function(x) { return x.sensor_code === c; });\n    var lim = limits[c];\n    var thresh = (r && r.alert_threshold !== null && r.alert_threshold !== undefined) ? Number(r.alert_threshold) : lim.def;\n    return {\n        code: c,\n        name: r ? r.sensor_name : (\"Cảm biến Ngẫu nhiên \" + c.replace(\"RND\", \"\")),\n        unit: r ? r.unit : \"\",\n        min: lim.min,\n        max: lim.max,\n        threshold: thresh,\n        updated_at: r ? r.threshold_updated_at : null\n    };\n});\n\nmsg.statusCode = 200;\nmsg.payload = {\n    ok: true,\n    thresholds: list\n};\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 740,
+    "y": 880,
+    "wires": [
+      [
+        "h_get_thresh_resp"
+      ]
+    ]
+  },
+  {
+    "id": "h_put_thresholds",
+    "type": "http in",
+    "z": "flow_dashboard_api",
+    "name": "PUT /api/thresholds",
+    "url": "/api/thresholds",
+    "method": "put",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 130,
+    "y": 960,
+    "wires": [
+      [
+        "fn_put_thresh_validate"
+      ]
+    ]
+  },
+  {
+    "id": "h_put_thresh_resp",
+    "type": "http response",
+    "z": "flow_dashboard_api",
+    "name": "Response PUT /api/thresholds",
+    "statusCode": "",
+    "headers": {},
+    "x": 940,
+    "y": 960,
+    "wires": []
+  },
+  {
+    "id": "fn_put_thresh_validate",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Auth & Validate PUT /api/thresholds",
+    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\n// Quyền: viewer bị từ chối với mã 403 Forbidden\nif (session.role === \"viewer\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản viewer chỉ có quyền xem, không được phép chỉnh sửa ngưỡng cảnh báo\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (!body || typeof body !== \"object\" || Array.isArray(body)) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: \"Dữ liệu yêu cầu phải là đối tượng JSON (ví dụ: {\\\"RND1\\\": 5, \\\"RND2\\\": 50, \\\"RND3\\\": 500})\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar validCodes = [\"RND1\", \"RND2\", \"RND3\"];\nvar keys = Object.keys(body);\n\nif (keys.length === 0) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: \"Dữ liệu yêu cầu rỗng, phải chứa ít nhất một mã cảm biến (RND1, RND2, RND3)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nfor (var i = 0; i < keys.length; i++) {\n    var k = keys[i];\n    if (validCodes.indexOf(k) === -1) {\n        msg.statusCode = 400;\n        msg.payload = { ok: false, error: \"Mã cảm biến không hợp lệ: \" + k + \" (chỉ chấp nhận RND1, RND2, RND3)\" };\n        msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n        return [null, msg];\n    }\n}\n\nvar limits = {\n    \"RND1\": { min: 0, max: 10, label: \"Cảm biến 1 (RND1)\" },\n    \"RND2\": { min: 0, max: 100, label: \"Cảm biến 2 (RND2)\" },\n    \"RND3\": { min: 0, max: 1000, label: \"Cảm biến 3 (RND3)\" }\n};\n\nfor (var j = 0; j < keys.length; j++) {\n    var code = keys[j];\n    var val = body[code];\n    var lim = limits[code];\n\n    if (typeof val !== \"number\" || isNaN(val) || !isFinite(val) || !Number.isInteger(val)) {\n        msg.statusCode = 400;\n        msg.payload = { ok: false, error: \"Ngưỡng của \" + lim.label + \" phải là một số nguyên hợp lệ trong khoảng 0..\" + lim.max };\n        msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n        return [null, msg];\n    }\n\n    if (val < lim.min || val > lim.max) {\n        msg.statusCode = 400;\n        msg.payload = { ok: false, error: \"Ngưỡng của \" + lim.label + \" phải nằm trong khoảng từ \" + lim.min + \" đến \" + lim.max };\n        msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n        return [null, msg];\n    }\n}\n\nvar userId = session.user_id || 1;\nvar rnd1Val = body.RND1 !== undefined ? body.RND1 : null;\nvar rnd2Val = body.RND2 !== undefined ? body.RND2 : null;\nvar rnd3Val = body.RND3 !== undefined ? body.RND3 : null;\n\nmsg.saved_user_id = userId;\nmsg.saved_body = body;\n\nmsg.topic = \"UPDATE sensors SET \" +\n            \"alert_threshold = CASE sensor_code \" +\n            \"  WHEN 'RND1' THEN COALESCE(?, alert_threshold) \" +\n            \"  WHEN 'RND2' THEN COALESCE(?, alert_threshold) \" +\n            \"  WHEN 'RND3' THEN COALESCE(?, alert_threshold) \" +\n            \"END \" +\n            \"WHERE sensor_code IN ('RND1', 'RND2', 'RND3');\";\n\nmsg.payload = [rnd1Val, rnd2Val, rnd3Val];\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 350,
+    "y": 960,
+    "wires": [
+      [
+        "m_put_thresh_update"
+      ],
+      [
+        "h_put_thresh_resp"
+      ]
+    ]
+  },
+  {
+    "id": "m_put_thresh_update",
+    "type": "mysql",
+    "z": "flow_dashboard_api",
+    "mydb": "mysql_db_cfg",
+    "name": "UPDATE sensors alert_threshold",
+    "x": 480,
+    "y": 1020,
+    "wires": [
+      [
+        "fn_prepare_put_select"
+      ]
+    ]
+  },
+  {
+    "id": "fn_prepare_put_select",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Prepare SELECT updated thresholds",
+    "func": "msg.topic = \"SELECT sensor_code, sensor_name, unit, alert_threshold, threshold_updated_at FROM sensors WHERE sensor_code IN ('RND1', 'RND2', 'RND3') ORDER BY sensor_id;\";\nmsg.payload = [];\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 620,
+    "y": 1020,
+    "wires": [
+      [
+        "m_put_thresh_select"
+      ]
+    ]
+  },
+  {
+    "id": "m_put_thresh_select",
+    "type": "mysql",
+    "z": "flow_dashboard_api",
+    "mydb": "mysql_db_cfg",
+    "name": "SELECT updated alert_threshold",
+    "x": 780,
+    "y": 1020,
+    "wires": [
+      [
+        "fn_put_thresh_resp"
+      ]
+    ]
+  },
+  {
+    "id": "fn_put_thresh_resp",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Format response & Publish MQTT",
+    "func": "var rows = msg.payload || [];\nvar limits = {\n    \"RND1\": { min: 0, max: 10, def: 5 },\n    \"RND2\": { min: 0, max: 100, def: 50 },\n    \"RND3\": { min: 0, max: 1000, def: 500 }\n};\n\nvar codes = [\"RND1\", \"RND2\", \"RND3\"];\nvar list = codes.map(function(c) {\n    var r = rows.find(function(x) { return x.sensor_code === c; });\n    var lim = limits[c];\n    var thresh = (r && r.alert_threshold !== null && r.alert_threshold !== undefined) ? Number(r.alert_threshold) : lim.def;\n    return {\n        code: c,\n        name: r ? r.sensor_name : (\"Cảm biến Ngẫu nhiên \" + c.replace(\"RND\", \"\")),\n        unit: r ? r.unit : \"\",\n        min: lim.min,\n        max: lim.max,\n        threshold: thresh,\n        updated_at: r ? r.threshold_updated_at : null\n    };\n});\n\nvar t1 = list.find(function(x) { return x.code === 'RND1'; }).threshold;\nvar t2 = list.find(function(x) { return x.code === 'RND2'; }).threshold;\nvar t3 = list.find(function(x) { return x.code === 'RND3'; }).threshold;\n\nglobal.set(\"thresholds\", { RND1: t1, RND2: t2, RND3: t3 });\n\n// Giữ nguyên msg để bảo toàn msg.res và msg.req cho http response node\nmsg.statusCode = 200;\nmsg.payload = {\n    ok: true,\n    message: \"Cập nhật ngưỡng cảnh báo thành công\",\n    thresholds: list\n};\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\n\nvar mqttMsg = {\n    topic: \"device/config/threshold\",\n    payload: JSON.stringify({ t1: t1, t2: t2, t3: t3 }),\n    qos: 1,\n    retain: true\n};\n\nreturn [msg, mqttMsg];",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 840,
+    "y": 960,
+    "wires": [
+      [
+        "h_put_thresh_resp"
+      ],
+      [
+        "m_threshold_pub"
+      ]
+    ]
+  },
+  {
+    "id": "h_sensor_types",
+    "type": "http in",
+    "z": "flow_dashboard_api",
+    "name": "GET /api/sensor-types",
+    "url": "/api/sensor-types",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 140,
+    "y": 1040,
+    "wires": [
+      [
+        "fn_sensor_types_auth"
+      ]
+    ]
+  },
+  {
+    "id": "fn_sensor_types_auth",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Auth GET /api/sensor-types",
+    "func": "var authHeader = (msg.req && msg.req.headers && (msg.req.headers[\"authorization\"] || msg.req.headers[\"Authorization\"])) || \"\";\nvar token = \"\";\nif (authHeader.indexOf(\"Bearer \") === 0) {\n    token = authHeader.substring(7).trim();\n} else if (msg.req && msg.req.query && msg.req.query.token) {\n    token = msg.req.query.token;\n}\n\nif (!token) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Yêu cầu đăng nhập (thiếu token xác thực trong header Authorization)\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nvar sessions = global.get(\"sessions\") || {};\nvar session = sessions[token];\nif (!session && token === \"demo_admin_token\") { session = { user_id: 1, username: \"admin\", full_name: \"Quản trị viên\", role: \"admin\" }; }\nif (!session && token === \"demo_user_token\") { session = { user_id: 2, username: \"user\", full_name: \"Người dùng\", role: \"user\" }; }\nif (!session && token === \"demo_viewer_token\") { session = { user_id: 3, username: \"viewer\", full_name: \"Người xem\", role: \"viewer\" }; }\n\nif (!session) {\n    msg.statusCode = 401;\n    msg.payload = { ok: false, error: \"Token xác thực không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nif (session.role !== \"admin\" && session.role !== \"user\") {\n    msg.statusCode = 403;\n    msg.payload = { ok: false, error: \"Tài khoản \" + session.role + \" không có quyền truy cập danh sách loại cảm biến\" };\n    msg.headers = { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\" };\n    return [null, msg];\n}\n\nmsg.topic = \"SELECT sensor_id, sensor_code, sensor_name, sensor_type, unit, alert_threshold FROM sensors ORDER BY sensor_id ASC;\";\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 370,
+    "y": 1040,
+    "wires": [
+      [
+        "m_sensor_types"
+      ],
+      [
+        "h_sensor_types_resp"
+      ]
+    ]
+  },
+  {
+    "id": "m_sensor_types",
+    "type": "mysql",
+    "z": "flow_dashboard_api",
+    "mydb": "mysql_db_cfg",
+    "name": "SELECT all sensors",
+    "x": 580,
+    "y": 1040,
+    "wires": [
+      [
+        "fn_sensor_types_format"
+      ]
+    ]
+  },
+  {
+    "id": "fn_sensor_types_format",
+    "type": "function",
+    "z": "flow_dashboard_api",
+    "name": "Format sensor-types response",
+    "func": "msg.statusCode = 200;\nmsg.payload = {\n    ok: true,\n    sensors: msg.payload || []\n};\nmsg.headers = {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\"\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 790,
+    "y": 1040,
+    "wires": [
+      [
+        "h_sensor_types_resp"
+      ]
+    ]
+  },
+  {
+    "id": "h_sensor_types_resp",
+    "type": "http response",
+    "z": "flow_dashboard_api",
+    "name": "Response sensor-types",
+    "statusCode": "",
+    "headers": {},
+    "x": 1010,
+    "y": 1040,
     "wires": []
   }
 ]

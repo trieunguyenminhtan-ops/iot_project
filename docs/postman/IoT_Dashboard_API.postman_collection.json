@@ -703,6 +703,241 @@
           "response": []
         },
         {
+          "name": "Data sensor - Lọc theo RND1 (Ngẫu nhiên 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Tất cả bản ghi trả về đều là RND1\", function () {",
+                  "    pm.expect(j.rows).to.be.an('array');",
+                  "    j.rows.forEach(function(r) { pm.expect(r.sensor_code).to.eql(\"RND1\"); });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sensors?type=RND1&page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "RND1",
+                  "description": "Lọc theo mã cảm biến RND1"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lọc dữ liệu cảm biến theo mã RND1 (Ngẫu nhiên 1)."
+          },
+          "response": []
+        },
+        {
+          "name": "Data sensor - Lọc theo RND2 (Ngẫu nhiên 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Tất cả bản ghi trả về đều là RND2\", function () {",
+                  "    pm.expect(j.rows).to.be.an('array');",
+                  "    j.rows.forEach(function(r) { pm.expect(r.sensor_code).to.eql(\"RND2\"); });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sensors?type=RND2&page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "RND2",
+                  "description": "Lọc theo mã cảm biến RND2"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lọc dữ liệu cảm biến theo mã RND2 (Ngẫu nhiên 2)."
+          },
+          "response": []
+        },
+        {
+          "name": "Data sensor - Lọc theo RND3 (Ngẫu nhiên 3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Tất cả bản ghi trả về đều là RND3\", function () {",
+                  "    pm.expect(j.rows).to.be.an('array');",
+                  "    j.rows.forEach(function(r) { pm.expect(r.sensor_code).to.eql(\"RND3\"); });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sensors?type=RND3&page=1&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensors"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "RND3",
+                  "description": "Lọc theo mã cảm biến RND3"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lọc dữ liệu cảm biến theo mã RND3 (Ngẫu nhiên 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Data sensor - Danh sách loại cảm biến (GET /api/sensor-types)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Trả về đầy đủ danh sách 6 cảm biến\", function () {",
+                  "    pm.expect(j.ok).to.eql(true);",
+                  "    pm.expect(Array.isArray(j.sensors)).to.eql(true);",
+                  "    pm.expect(j.sensors.length).to.be.at.least(6);",
+                  "    var codes = j.sensors.map(function(s) { return s.sensor_code; });",
+                  "    pm.expect(codes).to.include.members([\"dht11_temp\", \"dht11_hum\", \"ldr_light\", \"RND1\", \"RND2\", \"RND3\"]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sensor-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensor-types"
+              ]
+            },
+            "description": "Lấy danh mục tất cả cảm biến trong hệ thống để frontend dựng dropdown bộ lọc động."
+          },
+          "response": []
+        },
+        {
+          "name": "Data sensor - Lỗi: Thiếu Authorization khi xem loại cảm biến (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Báo lỗi thiếu token xác thực\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.ok).to.eql(false);",
+                  "    pm.expect(json.error).to.include(\"Authorization\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sensor-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sensor-types"
+              ]
+            },
+            "description": "Kiểm tra bảo mật API: Truy cập endpoint /api/sensor-types mà không truyền token xác thực -> Hệ thống chặn và trả về HTTP 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
           "name": "Data sensor - Lỗi: Thiếu Authorization khi xem dữ liệu",
           "event": [
             {
@@ -1784,7 +2019,7 @@
       "name": "6. Cảnh báo (Warnings)",
       "item": [
         {
-          "name": "Cảnh báo - Lấy dữ liệu 3 cảm biến & trạng thái nháy LED (Có Token)",
+          "name": "Cảnh báo - Lấy dữ liệu 3 cảm biến & ngưỡng hiện hành (Có Token)",
           "event": [
             {
               "listen": "test",
@@ -1802,16 +2037,12 @@
                   "    var codes = j.sensors.map(function(s) { return s.code; });",
                   "    pm.expect(codes).to.include.members([\"RND1\", \"RND2\", \"RND3\"]);",
                   "});",
-                  "pm.test(\"Mỗi cảm biến có min, max, threshold đúng 50% max\", function () {",
+                  "pm.test(\"Mỗi cảm biến có threshold, default_threshold và cờ alert chuẩn xác\", function () {",
+                  "    var defaults = { RND1: 5, RND2: 50, RND3: 500 };",
                   "    j.sensors.forEach(function(s) {",
-                  "        pm.expect(s).to.include.keys(\"code\", \"name\", \"min\", \"max\", \"threshold\", \"alert\", \"history\");",
-                  "        pm.expect(s.threshold).to.eql(s.max * 0.5);",
-                  "    });",
-                  "});",
-                  "pm.test(\"Lịch sử đo tối đa 20 điểm và cờ alert đúng ngưỡng (> 50% max)\", function () {",
-                  "    j.sensors.forEach(function(s) {",
-                  "        pm.expect(Array.isArray(s.history)).to.eql(true);",
-                  "        pm.expect(s.history.length).to.be.at.most(20);",
+                  "        pm.expect(s).to.include.keys(\"code\", \"min\", \"max\", \"threshold\", \"default_threshold\", \"alert\", \"history\");",
+                  "        pm.expect(s.default_threshold).to.eql(defaults[s.code]);",
+                  "        pm.expect(s.threshold).to.be.a(\"number\");",
                   "        if (s.value !== null && s.value !== undefined) {",
                   "            pm.expect(s.alert).to.eql(s.value > s.threshold);",
                   "        }",
@@ -1840,12 +2071,268 @@
                 "warnings"
               ]
             },
-            "description": "Lấy thông tin và trạng thái cảnh báo của 3 cảm biến ngẫu nhiên RND1, RND2, RND3. Trả về cấu trúc min, max, threshold (=50% max), giá trị hiện tại, cờ alert và tối đa 20 điểm lịch sử đo gần nhất."
+            "description": "Lấy thông tin 3 cảm biến ngẫu nhiên, ngưỡng cảnh báo đọc từ DB, default_threshold và tối đa 20 điểm lịch sử đo."
           },
           "response": []
         },
         {
-          "name": "Cảnh báo - Lỗi: Thiếu Authorization khi xem cảnh báo",
+          "name": "Cảnh báo - Cập nhật ngưỡng cảnh báo (PUT 200 Hợp lệ)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Cập nhật ngưỡng thành công và trả về danh sách ngưỡng mới\", function () {",
+                  "    pm.expect(j.ok).to.eql(true);",
+                  "    pm.expect(Array.isArray(j.thresholds)).to.eql(true);",
+                  "    var r1 = j.thresholds.find(function(x) { return x.code === 'RND1'; });",
+                  "    var r2 = j.thresholds.find(function(x) { return x.code === 'RND2'; });",
+                  "    var r3 = j.thresholds.find(function(x) { return x.code === 'RND3'; });",
+                  "    pm.expect(r1.threshold).to.eql(7);",
+                  "    pm.expect(r2.threshold).to.eql(75);",
+                  "    pm.expect(r3.threshold).to.eql(750);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"RND1\":7,\"RND2\":75,\"RND3\":750}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/thresholds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "thresholds"
+              ]
+            },
+            "description": "Cập nhật ngưỡng cảnh báo mới cho 3 cảm biến (RND1=7, RND2=75, RND3=750). Server lưu DB và publish retained MQTT message."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Kiểm tra GET /api/warnings phản ánh đúng ngưỡng mới",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Ngưỡng trong warnings khớp chính xác giá trị vừa cập nhật (7, 75, 750)\", function () {",
+                  "    var r1 = j.sensors.find(function(x) { return x.code === 'RND1'; });",
+                  "    var r2 = j.sensors.find(function(x) { return x.code === 'RND2'; });",
+                  "    var r3 = j.sensors.find(function(x) { return x.code === 'RND3'; });",
+                  "    pm.expect(r1.threshold).to.eql(7);",
+                  "    pm.expect(r2.threshold).to.eql(75);",
+                  "    pm.expect(r3.threshold).to.eql(750);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "warnings"
+              ]
+            },
+            "description": "Xác nhận endpoint GET /api/warnings trả đúng ngưỡng mới vừa cập nhật qua PUT /api/thresholds."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Lỗi: PUT /api/thresholds giá trị ngoài khoảng (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Báo lỗi chi tiết cảm biến sai giá trị\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.ok).to.eql(false);",
+                  "    pm.expect(json.error).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"RND1\":99}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/thresholds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "thresholds"
+              ]
+            },
+            "description": "Gửi giá trị ngưỡng ngoài khoảng (RND1 = 99 trong khi dải là 0..10) -> Hệ thống phải chặn và trả về HTTP 400 Bad Request."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Lỗi: Thiếu Authorization khi cập nhật ngưỡng (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Báo lỗi thiếu token xác thực\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.ok).to.eql(false);",
+                  "    pm.expect(json.error).to.include(\"Authorization\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"RND1\":5}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/thresholds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "thresholds"
+              ]
+            },
+            "description": "Kiểm tra bảo mật API: Gọi PUT /api/thresholds mà không truyền token -> Bị chặn với HTTP 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Khôi phục ngưỡng mặc định (5, 50, 500)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var j = pm.response.json();",
+                  "pm.test(\"Khôi phục ngưỡng mặc định 5/50/500 thành công\", function () {",
+                  "    pm.expect(j.ok).to.eql(true);",
+                  "    var r1 = j.thresholds.find(function(x) { return x.code === 'RND1'; });",
+                  "    var r2 = j.thresholds.find(function(x) { return x.code === 'RND2'; });",
+                  "    var r3 = j.thresholds.find(function(x) { return x.code === 'RND3'; });",
+                  "    pm.expect(r1.threshold).to.eql(5);",
+                  "    pm.expect(r2.threshold).to.eql(50);",
+                  "    pm.expect(r3.threshold).to.eql(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"RND1\":5,\"RND2\":50,\"RND3\":500}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/thresholds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "thresholds"
+              ]
+            },
+            "description": "Khôi phục ngưỡng mặc định (5, 50, 500) để đảm bảo trạng thái hệ thống nhất quán sau chuỗi kiểm thử."
+          },
+          "response": []
+        },
+        {
+          "name": "Cảnh báo - Lỗi: Thiếu Authorization khi xem cảnh báo (401)",
           "event": [
             {
               "listen": "test",

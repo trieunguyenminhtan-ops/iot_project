@@ -137,9 +137,13 @@ Dự án hoàn toàn tương thích và hoạt động mượt mà trên **Antig
      ```bat
      mysql -u iot -p iot_project < C:/iot-project/database/migrations/001_add_random_sensors.sql
      ```
+   - **Bổ sung cấu hình ngưỡng cảnh báo alert_threshold (Migration 002):**
+     ```bat
+     mysql -u iot -p iot_project < C:/iot-project/database/migrations/002_add_alert_threshold.sql
+     ```
    > ⚠️ Chạy lần thứ 2 `schema.sql` sẽ báo lỗi `already exists`. Muốn nạp lại từ đầu (**xóa hết dữ liệu**), chạy trước:
    > `mysql -u root -p -e "DROP DATABASE IF EXISTS iot_project;"`
-   > File migration `001_add_random_sensors.sql` là idempotent (chạy nhiều lần an toàn, không sinh lỗi, không trùng lặp bản ghi).
+   > Các file migration `001_add_random_sensors.sql` và `002_add_alert_threshold.sql` là idempotent (chạy nhiều lần an toàn, không sinh lỗi, không trùng lặp bản ghi).
    > Nếu thấy cảnh báo "Integer display width is deprecated" thì bỏ qua, không ảnh hưởng.
 5. **Tạo user riêng cho Node-RED** (đổi `MYSQL_IOT_PASS`):
    ```bat
@@ -201,6 +205,10 @@ Dự án hoàn toàn tương thích và hoạt động mượt mà trên **Antig
    Giả lập NodeMCU gửi 3 cảm biến ngẫu nhiên để kiểm tra nháy LED cảnh báo và ô giá trị đổi màu đỏ trên Web:
    ```bat
    mosquitto_pub -h localhost -p 8000 -u MQTT_USER -P MQTT_PASS -t data/random -m "{\"s1\":6,\"s2\":90,\"s3\":300}"
+   ```
+   Kiểm tra đồng bộ cấu hình ngưỡng qua retained message:
+   ```bat
+   mosquitto_sub -h localhost -p 8000 -u MQTT_USER -P MQTT_PASS -t "device/config/threshold" -v
    ```
    *(Kỳ vọng: LED 1 và LED 2 nháy, LED 3 tắt; trên Web box LED 1 và LED 2 nháy đỏ, ô giá trị đỏ)*
    mysql -u iot -p -h 127.0.0.1 iot_project -e "SELECT * FROM data_sensors;"
